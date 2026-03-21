@@ -1,0 +1,23 @@
+{
+  "name": "@modern-essentials/email",
+  "version": "0.0.1",
+  "description": "React Email templates",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "dev": "email dev"
+  },
+  "dependencies": {
+    "@react-email/components": "^0.0.16",
+    "react-email": "^2.1.0"
+  },
+  "devDependencies": {
+    "@modern-essentials/config": "workspace:*",
+    "@types/react": "^18.2.0",
+    "react": "^18.2.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,47 @@
+# Modern Essentials — Windsurf Rules
+# Read this before every response. This is the law.
+
+## Project
+Subscription-first D2C fresh essentials brand. Reference doc: modern_essentials_blueprint_v2.md (in workspace root).
+
+## Stack — never deviate
+- Monorepo: Turborepo + pnpm workspaces
+- Frontend: Next.js 14 App Router + TypeScript strict + Tailwind + shadcn/ui
+- Backend: NestJS + TypeScript strict + class-validator + Swagger
+- ORM: Prisma (never TypeORM, never raw SQL unless migration)
+- DB: PostgreSQL
+- Queue: BullMQ on Upstash Redis
+- Auth: Clerk
+- Payments: Razorpay Subscriptions API
+- Package manager: pnpm ONLY (never npm or yarn)
+
+## Coding rules
+- TypeScript strict mode everywhere. No `any`. No type assertions without comment.
+- Every NestJS module gets: module.ts, controller.ts, service.ts, dto.ts
+- Every Prisma query that picks inventory MUST ORDER BY expires_at ASC (FEFO law)
+- Every Razorpay webhook handler MUST check webhook_events table for idempotency first
+- Rewards balance is NEVER updated directly. Append to ledger_entries only.
+- Subscription status transitions happen ONLY in the subscription service, never in controllers
+- No console.log in committed code. Use NestJS Logger.
+- All environment variables must exist in .env.example with a description comment
+
+## Structure
+- apps/web — Next.js storefront
+- apps/api — NestJS backend
+- apps/admin — Next.js ops dashboard
+- packages/db — Prisma schema + migrations
+- packages/types — shared interfaces + Zod schemas
+- packages/utils — shared helpers
+- packages/email — React Email templates
+- packages/config — ESLint, Prettier, TS configs
+
+## Phase discipline
+We build phase by phase. Currently: Phase 1, Week 1.
+Never build ahead of the current week without explicit instruction.
+When a week is complete, say "Week N complete. Ready for Week N+1 when you are."
+
+## Before writing any code
+1. State what you are about to build in one sentence
+2. List files you will create or modify
+3. Ask if there are any questions
+4. Then write the code

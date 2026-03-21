@@ -1,0 +1,28 @@
+{
+  "name": "@modern-essentials/db",
+  "version": "0.0.1",
+  "description": "Prisma schema and database client",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "prisma generate && tsc",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  },
+  "prisma": {
+    "schema": "schema.prisma"
+  }
+}

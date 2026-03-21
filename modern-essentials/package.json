@@ -1,0 +1,37 @@
+{
+  "name": "modern-essentials",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Subscription-first D2C fresh essentials brand - Turborepo monorepo",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:migrate": "turbo run db:migrate",
+    "db:generate": "turbo run db:generate",
+    "db:studio": "pnpm --filter db studio",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "turbo": "^2.0.0",
+    "esbuild": "^0.19.11"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,json,md}": [
+      "prettier --write"
+    ]
+  }
+}

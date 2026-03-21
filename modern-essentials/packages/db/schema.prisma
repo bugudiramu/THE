@@ -1,0 +1,165 @@
+// Week 1 Prisma Schema for Modern Essentials
+// Tables: users, products, orders, inventory_batches, webhook_events
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core user identity - phone is primary login in India
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique // Primary login in India
+  email     String?  @unique
+  clerkId   String   @unique @map("clerk_id")
+  tier      UserTier @default(FREE)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  orders Order[]
+
+  @@map("users")
+}
+
+enum UserTier {
+  FREE
+  MEMBER
+}
+
+// Product catalog - eggs and future dairy
+model Product {
+  id         String      @id @default(cuid())
+  sku        String      @unique // Stock keeping unit
+  name       String
+  category   Category
+  price      Int         // Price in paise (Rs 100 = 10000)
+  subPrice   Int         @map("sub_price") // Subscription price (discounted)
+  isActive   Boolean     @default(true) @map("is_active")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  inventoryBatches InventoryBatch[]
+  orders           OrderItem[]
+
+  @@map("products")
+}
+
+enum Category {
+  EGGS
+  DAIRY
+}
+
+// FEFO inventory tracking - First Expired, First Out
+// Critical for perishables - ORDER BY expires_at ASC on every pick
+model InventoryBatch {
+  id          String        @id @default(cuid())
+  productId   String        @map("product_id")
+  qty         Int           // Current quantity
+  receivedAt  DateTime      @map("received_at")
+  expiresAt   DateTime      @map("expires_at") // FEFO sort key
+  locationId  String?       @map("location_id") // Warehouse bin location
+  status      BatchStatus   @default(AVAILABLE)
+  qcStatus    QCStatus      @default(PENDING) @map("qc_status")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([productId, expiresAt]) // FEFO pick index
+  @@index([status, expiresAt])
+  @@map("inventory_batches")
+}
+
+enum BatchStatus {
+  AVAILABLE
+  RESERVED
+  DISPATCHED
+  WASTAGE
+}
+
+enum QCStatus {
+  PENDING
+  PASS
+  QUARANTINE
+  REJECT
+}
+
+// Order tracking - both one-time and subscription renewals
+model Order {
+  id             String      @id @default(cuid())
+  userId         String      @map("user_id")
+  subscriptionId String?     @map("subscription_id") // Null for one-time orders
+  status         OrderStatus @default(PENDING)
+  type           OrderType
+  total          Int         // Total in paise
+  placedAt       DateTime    @default(now()) @map("placed_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@index([userId, placedAt])
+  @@index([status, placedAt])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PAYMENT_FAILED
+  PICKED
+  PACKED
+  DISPATCHED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum OrderType {
+  ONE_TIME
+  SUBSCRIPTION_RENEWAL
+}
+
+// Order line items
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String @map("order_id")
+  productId String @map("product_id")
+  qty       Int
+  price     Int    // Price at time of order (in paise)
+  total     Int    // price * qty
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// Webhook event log - idempotency key: (provider, event_id)
+// Every handler MUST check this table before processing
+model WebhookEvent {
+  id           String    @id @default(cuid())
+  provider     String    // e.g., 'razorpay', 'interakt', 'shadowfax'
+  eventId      String    @map("event_id") // Provider's event ID
+  eventType    String    @map("event_type") // e.g., 'payment.captured'
+  payload      Json // Raw webhook payload
+  processedAt  DateTime? @map("processed_at") // Null = not yet processed
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@unique([provider, eventId]) // Idempotency constraint
+  @@index([provider, eventType])
+  @@index([processedAt])
+  @@map("webhook_events")
+}

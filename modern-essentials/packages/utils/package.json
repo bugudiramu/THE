@@ -1,0 +1,16 @@
+{
+  "name": "@modern-essentials/utils",
+  "version": "0.0.1",
+  "description": "Shared utility functions",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@modern-essentials/config": "workspace:*",
+    "typescript": "^5.4.0"
+  }
+}

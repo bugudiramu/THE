@@ -1,0 +1,62 @@
+import { z } from 'zod';
+
+// Enums
+export const OrderStatusSchema = z.enum([
+  'PENDING',
+  'PAID',
+  'PAYMENT_FAILED',
+  'PICKED',
+  'PACKED',
+  'DISPATCHED',
+  'DELIVERED',
+  'CANCELLED',
+  'REFUNDED',
+]);
+export type OrderStatus = z.infer<typeof OrderStatusSchema>;
+
+export const OrderTypeSchema = z.enum(['ONE_TIME', 'SUBSCRIPTION_RENEWAL']);
+export type OrderType = z.infer<typeof OrderTypeSchema>;
+
+// Order item schema
+export const OrderItemSchema = z.object({
+  id: z.string(),
+  orderId: z.string(),
+  productId: z.string(),
+  qty: z.number().int(),
+  price: z.number().int(),
+  total: z.number().int(),
+});
+
+export type OrderItem = z.infer<typeof OrderItemSchema>;
+
+// Order schema
+export const OrderSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  subscriptionId: z.string().optional(),
+  status: OrderStatusSchema,
+  type: OrderTypeSchema,
+  total: z.number().int(),
+  placedAt: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  items: z.array(OrderItemSchema).optional(),
+});
+
+export type Order = z.infer<typeof OrderSchema>;
+
+// DTOs
+export const CreateOrderItemSchema = z.object({
+  productId: z.string(),
+  qty: z.number().int().min(1),
+});
+
+export type CreateOrderItemDto = z.infer<typeof CreateOrderItemSchema>;
+
+export const CreateOrderSchema = z.object({
+  userId: z.string(),
+  items: z.array(CreateOrderItemSchema).min(1),
+  type: OrderTypeSchema.default('ONE_TIME'),
+});
+
+export type CreateOrderDto = z.infer<typeof CreateOrderSchema>;
