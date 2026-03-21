@@ -2,8 +2,8 @@
   "name": "@modern-essentials/db",
   "version": "0.0.1",
   "description": "Prisma schema and database client",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./generated/client/index.js",
+  "types": "./generated/client/index.d.ts",
   "scripts": {
     "build": "prisma generate && tsc",
     "db:generate": "prisma generate",

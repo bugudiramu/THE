@@ -41,6 +41,10 @@ model Product {
   price      Int         // Price in paise (Rs 100 = 10000)
   subPrice   Int         @map("sub_price") // Subscription price (discounted)
   isActive   Boolean     @default(true) @map("is_active")
+  images     ProductImage[]
+  description String?     // SEO and product description
+  seoTitle   String?     @map("seo_title") // SEO meta title
+  seoDesc     String?     @map("seo_desc") // SEO meta description
   createdAt  DateTime    @default(now()) @map("created_at")
   updatedAt  DateTime    @updatedAt @map("updated_at")
 
@@ -52,8 +56,25 @@ model Product {
 }
 
 enum Category {
-  EGGS
-  DAIRY
+  REGULAR_EGGS
+  BROWN_EGGS
+  HIGH_PROTEIN_EGGS
+}
+
+// Product images for Cloudflare R2 CDN
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  url       String   // Cloudflare R2 CDN URL
+  alt       String?  // Alt text for accessibility
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+  @@map("product_images")
 }
 
 // FEFO inventory tracking - First Expired, First Out

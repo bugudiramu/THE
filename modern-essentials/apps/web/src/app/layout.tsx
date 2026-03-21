@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Modern Essentials',
-  description: 'Fresh essentials, delivered.',
+  title: "Modern Essentials",
+  description: "Fresh essentials, delivered.",
 };
 
 export default function RootLayout({
