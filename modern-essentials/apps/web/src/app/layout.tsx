@@ -1,4 +1,6 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import { CartProvider } from "../contexts/CartContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,8 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }): JSX.Element {
   return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
+    <ClerkProvider>
+      <CartProvider>
+        <html lang="en">
+          <body>{children}</body>
+        </html>
+      </CartProvider>
+    </ClerkProvider>
   );
 }

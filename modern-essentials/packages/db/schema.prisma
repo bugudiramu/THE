@@ -23,6 +23,7 @@ model User {
 
   // Relations
   orders Order[]
+  carts Cart[]
 
   @@map("users")
 }
@@ -51,6 +52,7 @@ model Product {
   // Relations
   inventoryBatches InventoryBatch[]
   orders           OrderItem[]
+  cartItems        CartItem[]
 
   @@map("products")
 }
@@ -183,4 +185,37 @@ model WebhookEvent {
   @@index([provider, eventType])
   @@index([processedAt])
   @@map("webhook_events")
+}
+
+// Shopping cart system for user orders
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@unique([userId]) // One cart per user
+  @@map("carts")
+}
+
+// Individual items in a user's cart
+model CartItem {
+  id            String   @id @default(cuid())
+  cartId        String   @map("cart_id")
+  productId     String   @map("product_id")
+  quantity      Int      // Number of items
+  priceSnapshot Int      @map("price_snapshot") // Price at time of adding (in paise)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId]) // One product per cart
+  @@map("cart_items")
 }

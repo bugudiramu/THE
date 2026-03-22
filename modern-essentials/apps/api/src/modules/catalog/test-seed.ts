@@ -54,7 +54,7 @@ export class TestSeedService {
           images: {
             create: [
               {
-                url: "https://images.unsplash.com/photo-1586197186264-d1b5e233b63c?w=800&h=600&fit=crop",
+                url: "https://images.unsplash.com/photo-1518569656558-1f25e69c93d7?w=800&h=600&fit=crop",
                 alt: "Organic brown eggs",
                 sortOrder: 0,
               },
@@ -80,7 +80,7 @@ export class TestSeedService {
           images: {
             create: [
               {
-                url: "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=800&h=600&fit=crop",
+                url: "https://images.unsplash.com/photo-1518569656558-1f25e69c93d7?w=800&h=600&fit=crop",
                 alt: "High-protein eggs",
                 sortOrder: 0,
               },

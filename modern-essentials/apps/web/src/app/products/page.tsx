@@ -1,6 +1,9 @@
 "use client";
 
+import { UserButton, useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useCart } from "../../contexts/CartContext";
 
 interface Product {
   id: string;
@@ -50,6 +53,8 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isSignedIn } = useUser();
+  const { addItem } = useCart();
 
   useEffect(() => {
     async function loadData() {
@@ -98,123 +103,201 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Products</h1>
+    <>
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Link href="/" className="text-xl font-bold text-gray-900">
+                Modern Essentials
+              </Link>
+            </div>
 
-          {/* Categories Filter */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
-              Categories
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedCategory("all")}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  selectedCategory === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+            <nav className="hidden md:flex space-x-8">
+              <Link
+                href="/products"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium"
               >
-                All
-              </button>
-              {categories.map((category: string) => (
+                Products
+              </Link>
+              <Link
+                href="/cart"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+              >
+                Cart
+              </Link>
+            </nav>
+
+            <div className="flex items-center space-x-4">
+              {!isSignedIn ? (
+                <>
+                  <Link
+                    href="/sign-in"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/sign-up"
+                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              ) : (
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 h-8",
+                      userButtonPopoverCard: "shadow-lg",
+                      userButtonPopoverActionButton:
+                        "text-gray-700 hover:bg-gray-50",
+                      userButtonPopoverActionButtonText: "text-sm",
+                    },
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">Products</h1>
+
+            {/* Categories Filter */}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                Categories
+              </h2>
+              <div className="flex flex-wrap gap-2">
                 <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() => setSelectedCategory("all")}
                   className={`px-4 py-2 text-sm font-medium rounded-md ${
-                    selectedCategory === category
+                    selectedCategory === "all"
                       ? "bg-blue-600 text-white"
                       : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                   }`}
                 >
-                  {category
-                    .replace("_", " ")
-                    .replace(
-                      /\b\w/g,
-                      (word) =>
-                        word.charAt(0).toUpperCase() +
-                        word.slice(1).toLowerCase(),
-                    )}
+                  All
                 </button>
-              ))}
+                {categories.map((category: string) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                      selectedCategory === category
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    {category
+                      .replace("_", " ")
+                      .replace(
+                        /\b\w/g,
+                        (word) =>
+                          word.charAt(0).toUpperCase() +
+                          word.slice(1).toLowerCase(),
+                      )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Products Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.map((product: Product) => (
-              <div
-                key={product.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
-              >
-                <div className="relative">
-                  {product.images && product.images.length > 0 && (
-                    <img
-                      src={product.images[0].url}
-                      alt={product.images[0].alt || product.name}
-                      className="w-full h-48 object-cover"
-                    />
-                  )}
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4">
-                      {product.description}
-                    </p>
+            {/* Products Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProducts.map((product: Product) => (
+                <div
+                  key={product.id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden"
+                >
+                  <div className="relative">
+                    {product.images && product.images.length > 0 && (
+                      <img
+                        src={product.images[0].url}
+                        alt={product.images[0].alt || product.name}
+                        className="w-full h-48 object-cover"
+                      />
+                    )}
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {product.name}
+                      </h3>
+                      <p className="text-gray-600 text-sm mb-4">
+                        {product.description}
+                      </p>
 
-                    {/* Pricing */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <span className="text-2xl font-bold text-gray-900">
-                          ₹{(product.price / 100).toFixed(2)}
-                        </span>
-                        <span className="text-sm text-gray-500 block">
-                          one-time
-                        </span>
-                      </div>
-
-                      {product.subPrice && (
-                        <div className="text-right">
-                          <span className="text-lg font-semibold text-green-600">
-                            ₹{(product.subPrice / 100).toFixed(2)}
+                      {/* Pricing */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <span className="text-2xl font-bold text-gray-900">
+                            ₹{(product.price / 100).toFixed(2)}
                           </span>
-                          <span className="text-sm text-green-500 block">
-                            Save ₹
-                            {((product.price - product.subPrice) / 100).toFixed(
-                              2,
-                            )}
-                            /month
+                          <span className="text-sm text-gray-500 block">
+                            one-time
                           </span>
                         </div>
+
+                        {product.subPrice && (
+                          <div className="text-right">
+                            <span className="text-lg font-semibold text-green-600">
+                              ₹{(product.subPrice / 100).toFixed(2)}
+                            </span>
+                            <span className="text-sm text-green-500 block">
+                              Save ₹
+                              {(
+                                (product.price - product.subPrice) /
+                                100
+                              ).toFixed(2)}
+                              /month
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {isSignedIn ? (
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => addItem(product.id, 1)}
+                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center font-medium"
+                          >
+                            Add to Cart
+                          </button>
+                          <a
+                            href={`/products/${product.id}`}
+                            className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 text-center font-medium block"
+                          >
+                            View Details
+                          </a>
+                        </div>
+                      ) : (
+                        <Link
+                          href="/sign-in"
+                          className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 text-center font-medium block"
+                        >
+                          Sign in to View
+                        </Link>
                       )}
                     </div>
-
-                    <a
-                      href={`/products/${product.id}`}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center font-medium"
-                    >
-                      View Details
-                    </a>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredProducts.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">
-                {selectedCategory === "all"
-                  ? "No products found."
-                  : `No products found in ${selectedCategory.replace("_", " ").toLowerCase()}.`}
-              </p>
+              ))}
             </div>
-          )}
+
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">
+                  {selectedCategory === "all"
+                    ? "No products found."
+                    : `No products found in ${selectedCategory.replace("_", " ").toLowerCase()}.`}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

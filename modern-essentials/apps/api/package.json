@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@clerk/backend": "^3.2.2",
     "@modern-essentials/db": "workspace:*",
     "@modern-essentials/types": "workspace:*",
     "@modern-essentials/utils": "workspace:*",
@@ -21,11 +23,10 @@
     "@nestjs/platform-express": "^10.3.0",
     "@nestjs/swagger": "^7.3.0",
     "@prisma/client": "^5.22.0",
-    "@aws-sdk/client-s3": "^3.0.0",
-    "@clerk/backend": "^3.2.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "multer": "^2.0.0",
+    "razorpay": "^2.9.6",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0"
   },
