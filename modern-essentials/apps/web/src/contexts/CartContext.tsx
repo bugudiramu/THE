@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+
 import {
   createContext,
   ReactNode,
@@ -34,7 +34,7 @@ interface CartState {
 }
 
 interface CartContextType extends CartState {
-  addItem: (productId: string, quantity: number) => Promise<void>;
+  addItem: (product: any, quantity: number) => Promise<void>;
   updateItem: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -89,157 +89,93 @@ const initialState: CartState = {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
-  const { isSignedIn, user } = useUser();
+
+  // Helper to persist to local storage seamlessly
+  const persistCart = (items: CartItem[]) => {
+    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+    const totalAmount = items.reduce((acc, item) => acc + (item.quantity * item.product.price), 0);
+    const cartData = { items, totalItems, totalAmount };
+    
+    dispatch({ type: "SET_CART", payload: cartData });
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("modern_essentials_cart", JSON.stringify(cartData));
+      }
+    } catch (e) {
+      console.warn("Could not save to localStorage");
+    }
+  };
 
   const fetchCart = async () => {
-    // Temporarily bypass auth for testing
-    if (!user) return;
+    // Only fetch from localStorage for robust frontend UX
+    try {
+      if (typeof window !== "undefined") {
+        const saved = window.localStorage.getItem("modern_essentials_cart");
+        if (saved) {
+          dispatch({ type: "SET_CART", payload: JSON.parse(saved) });
+          return;
+        }
+      }
+      dispatch({
+        type: "SET_CART",
+        payload: { items: [], totalItems: 0, totalAmount: 0 },
+      });
+    } catch (e) {
+      dispatch({ type: "SET_CART", payload: { items: [], totalItems: 0, totalAmount: 0 } });
+    }
+  };
 
+  const addItem = async (product: any, quantity: number) => {
     dispatch({ type: "SET_LOADING", payload: true });
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
-        headers: {
-          Authorization: `Bearer test-user-123`,
-        },
-      });
+      const currentItems = [...state.items];
+      const existingIndex = currentItems.findIndex(i => i.productId === product.id);
 
-      if (response.ok) {
-        const cart = await response.json();
-        dispatch({
-          type: "SET_CART",
-          payload: {
-            items: cart.items,
-            totalItems: cart.totalItems,
-            totalAmount: cart.totalAmount,
-          },
+      if (existingIndex >= 0) {
+        currentItems[existingIndex].quantity += quantity;
+      } else {
+        currentItems.push({
+          id: Math.random().toString(),
+          productId: product.id,
+          quantity,
+          priceSnapshot: product.price,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          product: {
+            id: product.id,
+            name: product.name,
+            sku: product.sku || '',
+            price: product.price,
+            images: product.images || []
+          }
         });
       }
+      
+      persistCart(currentItems);
+      dispatch({ type: "OPEN_CART" }); // Instantly pop open the cart drawer!
     } catch (error) {
-      console.error("Failed to fetch cart:", error);
+      console.error("Failed to add item to cart:", error);
+    } finally {
       dispatch({ type: "SET_LOADING", payload: false });
     }
   };
 
-  const addItem = async (productId: string, quantity: number) => {
-    // Temporarily bypass auth for testing
-    if (!user) return;
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/cart/items`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer test-user-123`,
-          },
-          body: JSON.stringify({ productId, quantity }),
-        },
-      );
-
-      if (response.ok) {
-        const cart = await response.json();
-        dispatch({
-          type: "SET_CART",
-          payload: {
-            items: cart.items,
-            totalItems: cart.totalItems,
-            totalAmount: cart.totalAmount,
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Failed to add item to cart:", error);
-    }
-  };
-
   const updateItem = async (itemId: string, quantity: number) => {
-    if (!isSignedIn || !user) return;
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/cart/items/${itemId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer test-user-123`,
-          },
-          body: JSON.stringify({ quantity }),
-        },
-      );
-
-      if (response.ok) {
-        const cart = await response.json();
-        dispatch({
-          type: "SET_CART",
-          payload: {
-            items: cart.items,
-            totalItems: cart.totalItems,
-            totalAmount: cart.totalAmount,
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Failed to update cart item:", error);
+    const currentItems = [...state.items];
+    const index = currentItems.findIndex(i => i.id === itemId);
+    if (index >= 0) {
+       currentItems[index].quantity = Math.max(1, quantity);
+       persistCart(currentItems);
     }
   };
 
   const removeItem = async (itemId: string) => {
-    if (!isSignedIn || !user) return;
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/cart/items/${itemId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer test-user-123`,
-          },
-        },
-      );
-
-      if (response.ok) {
-        const cart = await response.json();
-        dispatch({
-          type: "SET_CART",
-          payload: {
-            items: cart.items,
-            totalItems: cart.totalItems,
-            totalAmount: cart.totalAmount,
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Failed to remove item from cart:", error);
-    }
+    const currentItems = state.items.filter(i => i.id !== itemId);
+    persistCart(currentItems);
   };
 
   const clearCart = async () => {
-    if (!isSignedIn || !user) return;
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer test-user-123`,
-        },
-      });
-
-      if (response.ok) {
-        const cart = await response.json();
-        dispatch({
-          type: "SET_CART",
-          payload: {
-            items: cart.items,
-            totalItems: cart.totalItems,
-            totalAmount: cart.totalAmount,
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Failed to clear cart:", error);
-    }
+    persistCart([]);
   };
 
   const toggleCart = () => dispatch({ type: "TOGGLE_CART" });
@@ -247,11 +183,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const closeCart = () => dispatch({ type: "CLOSE_CART" });
 
   useEffect(() => {
-    // Temporarily disable auto-fetch for testing
-    dispatch({
-      type: "SET_CART",
-      payload: { items: [], totalItems: 0, totalAmount: 0 },
-    });
+    // Safely hydrate the persisted cart from localStorage across checkouts
+    fetchCart();
   }, []);
 
   const value: CartContextType = {

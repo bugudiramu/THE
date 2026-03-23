@@ -3,7 +3,6 @@
 import { useCart } from '../../contexts/CartContext';
 import Image from 'next/image';
 import Link from 'next/link';
-import UserHeader from '../../components/UserHeader';
 
 export default function CartPage() {
   const { items, totalItems, totalAmount, isLoading, updateItem, removeItem } = useCart();
@@ -21,9 +20,7 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
-      
+    <div className="min-h-screen bg-transparent">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-2xl font-bold text-gray-900 mb-8">Shopping Cart</h1>

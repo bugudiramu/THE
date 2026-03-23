@@ -1,7 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useCart } from "../../contexts/CartContext";
 
 interface Product {
   id: string;
@@ -10,60 +10,63 @@ interface Product {
   price: number;
   sku: string;
   category: string;
+  subPrice?: number;
 }
 
 export default function ProductsFixedPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { addItem } = useCart();
+  const router = useRouter();
 
   useEffect(() => {
-    // Simulate loading completed
-    setLoading(false);
-    setError(null);
-    
-    // Use mock data for now
-    setProducts([
-      {
-        id: "cmn1hvz3t00047kz4b2sjt4ps",
-        name: "High-Protein Eggs",
-        description: "Extra high-protein eggs with enhanced nutritional value. Perfect for fitness enthusiasts.",
-        price: 18000,
-        sku: "EGG003",
-        category: "HIGH_PROTEIN_EGGS"
-      },
-      {
-        id: "cmn1hvz3q00027kz4psycn7gi",
-        name: "Organic Brown Eggs",
-        description: "Premium organic brown eggs from certified organic farms.",
-        price: 15000,
-        sku: "EGG002",
-        category: "BROWN_EGGS"
-      },
-      {
-        id: "cmn1hvz3700007kz4vbi8cc9h",
-        name: "Fresh Regular Eggs",
-        description: "Fresh farm eggs from free-range chickens. Perfect for breakfast and baking.",
-        price: 12000,
-        sku: "EGG001",
-        category: "REGULAR_EGGS"
-      }
-    ]);
+    fetchProducts();
   }, []);
 
-  const handleAddToCart = async (productId: string, productName: string) => {
+  const fetchProducts = async () => {
     try {
-      console.log("Adding to cart:", productId, productName);
-      await addItem(productId, 1);
-      console.log(`Added ${productName} to cart!`);
-    } catch (err) {
-      console.error("Error adding to cart:", err);
-    }
-  };
+      setLoading(true);
+      setError(null);
 
-  const formatPrice = (priceInPaise: number) => {
-    return `₹${(priceInPaise / 100).toFixed(2)}`;
+      const mockProducts: Product[] = [
+        {
+          id: "cmn1hvz3700007kz4vbi8cc9h",
+          name: "Fresh Regular Eggs",
+          description:
+            "Fresh farm eggs from free-range chickens. Perfect for breakfast and baking.",
+          price: 12000, // ₹120.00
+          sku: "EGG001",
+          category: "REGULAR_EGGS",
+          subPrice: 10800, // ₹108.00 with 10% savings
+        },
+        {
+          id: "cmn1hvz3t00027kz4psycn7gi",
+          name: "Organic Brown Eggs",
+          description:
+            "Premium organic brown eggs from certified organic farms.",
+          price: 15000, // ₹150.00
+          sku: "EGG002",
+          category: "BROWN_EGGS",
+          subPrice: 13200, // ₹132.00 with 12% savings
+        },
+        {
+          id: "cmn1hvz3t00047kz4b2sjt4ps",
+          name: "High-Protein Eggs",
+          description:
+            "Extra high-protein eggs with enhanced nutritional value. Perfect for fitness enthusiasts.",
+          price: 18000, // ₹180.00
+          sku: "EGG003",
+          category: "HIGH_PROTEIN_EGGS",
+          subPrice: 15300, // ₹153.00 with 15% savings
+        },
+      ];
+
+      setProducts(mockProducts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load products");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -92,21 +95,40 @@ export default function ProductsFixedPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Our Products</h1>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
-            <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div
+              key={product.id}
+              className="bg-white rounded-lg shadow-md overflow-hidden"
+            >
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {product.name}
+                </h3>
                 <p className="text-gray-600 mb-4">{product.description}</p>
-                <p className="text-2xl font-bold text-blue-600 mb-4">
-                  {formatPrice(product.price)}
-                </p>
+
+                <div className="flex items-baseline space-x-2 mb-4">
+                  <span className="text-2xl font-bold text-gray-900">
+                    ₹{(product.price / 100).toFixed(2)}
+                  </span>
+                  {product.subPrice && (
+                    <span className="text-sm text-green-600 font-medium">
+                      Subscribe & Save{" "}
+                      {Math.round(
+                        ((product.price - product.subPrice) / product.price) *
+                          100,
+                      )}
+                      %
+                    </span>
+                  )}
+                </div>
+
                 <button
-                  onClick={() => handleAddToCart(product.id, product.name)}
+                  onClick={() => router.push(`/products/${product.id}`)}
                   className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  Add to Cart
+                  View Details
                 </button>
               </div>
             </div>

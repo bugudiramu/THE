@@ -1,7 +1,5 @@
 "use client";
 
-import { UserButton, useUser } from "@clerk/nextjs";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "../../contexts/CartContext";
 
@@ -53,7 +51,6 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { isSignedIn } = useUser();
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -104,64 +101,6 @@ export default function ProductsPage() {
 
   return (
     <>
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">
-                Modern Essentials
-              </Link>
-            </div>
-
-            <nav className="hidden md:flex space-x-8">
-              <Link
-                href="/products"
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium"
-              >
-                Products
-              </Link>
-              <Link
-                href="/cart"
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium"
-              >
-                Cart
-              </Link>
-            </nav>
-
-            <div className="flex items-center space-x-4">
-              {!isSignedIn ? (
-                <>
-                  <Link
-                    href="/sign-in"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/sign-up"
-                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300"
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              ) : (
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-8 h-8",
-                      userButtonPopoverCard: "shadow-lg",
-                      userButtonPopoverActionButton:
-                        "text-gray-700 hover:bg-gray-50",
-                      userButtonPopoverActionButtonText: "text-sm",
-                    },
-                  }}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="min-h-screen bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
@@ -257,29 +196,20 @@ export default function ProductsPage() {
                         )}
                       </div>
 
-                      {isSignedIn ? (
-                        <div className="space-y-2">
-                          <button
-                            onClick={() => addItem(product.id, 1)}
-                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center font-medium"
-                          >
-                            Add to Cart
-                          </button>
-                          <a
-                            href={`/products/${product.id}`}
-                            className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 text-center font-medium block"
-                          >
-                            View Details
-                          </a>
-                        </div>
-                      ) : (
-                        <Link
-                          href="/sign-in"
-                          className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 text-center font-medium block"
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => addItem(product, 1)}
+                          className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 text-center font-medium transition-colors"
                         >
-                          Sign in to View
-                        </Link>
-                      )}
+                          Add to Cart
+                        </button>
+                        <a
+                          href={`/products/${product.id}`}
+                          className="w-full bg-secondary text-secondary-foreground py-2 px-4 rounded-md hover:bg-secondary/90 text-center font-medium block transition-colors"
+                        >
+                          View Details
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
