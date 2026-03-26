@@ -6,6 +6,7 @@ import { CheckoutModule } from "./modules/checkout/checkout.module";
 import { SubscriptionModule } from "./modules/subscription/subscription.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { WebhooksModule } from "./modules/webhooks/webhooks.module";
+import { OrdersModule } from "./modules/orders/orders.module";
 import { BullModule } from "@nestjs/bullmq";
 import { JobsModule } from "./jobs/jobs.module";
 
@@ -21,6 +22,7 @@ import { JobsModule } from "./jobs/jobs.module";
     SubscriptionModule,
     NotificationsModule,
     WebhooksModule,
+    OrdersModule,
     JobsModule,
     BullModule.forRoot({
       connection: {

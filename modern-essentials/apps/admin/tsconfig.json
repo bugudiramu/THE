@@ -3,6 +3,8 @@
   "compilerOptions": {
     "outDir": "./.next",
     "rootDir": ".",
+    "baseUrl": ".",
+    "lib": ["ES2022", "dom", "dom.iterable"],
     "jsx": "preserve",
     "plugins": [
       {

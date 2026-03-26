@@ -8,7 +8,7 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "dev": "email dev"
+    "dev": "email dev --dir ./src/templates"
   },
   "dependencies": {
     "@react-email/components": "^0.0.16",

@@ -165,8 +165,9 @@ function CheckoutContent() {
             );
 
             if (verifyResponse.ok) {
+              const verifyData = await verifyResponse.json();
               if (typeof globalThis !== "undefined") {
-                router.push("/order-confirmation");
+                router.push(`/order-confirmation?orderId=${verifyData.orderId}`);
               }
             } else {
               throw new Error("Could not verify payment securely.");

@@ -60,3 +60,41 @@ export const CreateOrderSchema = z.object({
 });
 
 export type CreateOrderDto = z.infer<typeof CreateOrderSchema>;
+
+// Admin Dashboard Types
+
+export interface OrderStatusCount {
+  counts: Record<OrderStatus, number>;
+  total: number;
+}
+
+export interface PickListItem {
+  orderId: string;
+  productId: string;
+  productSku: string;
+  productName: string;
+  qtyNeeded: number;
+  batchId: string;
+  binLocation: string | null;
+  expiresAt: string;
+}
+
+export interface ManifestItem {
+  orderId: string;
+  customerPhone: string;
+  customerEmail: string | null;
+  items: Array<{
+    productName: string;
+    sku: string;
+    qty: number;
+  }>;
+  total: number;
+  type: OrderType;
+}
+
+export const VALID_ORDER_TRANSITIONS: Record<string, OrderStatus[]> = {
+  PAID: ["PICKED", "CANCELLED"],
+  PICKED: ["PACKED", "CANCELLED"],
+  PACKED: ["DISPATCHED", "CANCELLED"],
+  DISPATCHED: ["DELIVERED"],
+};
