@@ -8,7 +8,7 @@ export default function CartPage() {
   const { items, totalItems, totalAmount, isLoading, updateItem, removeItem } = useCart();
 
   const formatPrice = (priceInPaise: number) => {
-    return `₹${(priceInPaise / 100).toFixed(2)}`;
+    return `Rs. ${(priceInPaise / 100).toFixed(2)}`;
   };
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
@@ -129,7 +129,7 @@ export default function CartPage() {
               <div className="bg-white shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
                   <h2 className="text-lg font-medium text-gray-900 mb-4">Order Summary</h2>
-                  
+
                   <div className="space-y-4">
                     <div className="flex justify-between text-base font-medium text-gray-900">
                       <p>Subtotal ({totalItems} items)</p>

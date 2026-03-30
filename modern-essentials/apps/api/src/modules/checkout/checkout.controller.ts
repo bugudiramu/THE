@@ -45,10 +45,16 @@ export class CheckoutController {
   @Post("create-subscription")
   async createSubscription(
     @CurrentUser() user: any,
-    @Body() body: { planId: string },
+    @Body() createOrderDto: CreateOrderDto,
   ) {
-    return this.checkoutService.createSubscription(body.planId, user.id);
+    return this.checkoutService.createSubscription(user.id, createOrderDto);
   }
+
+  // POC Subscription endpoints (to be deprecated once FSM is fully live)
+  /*
+  @Post("create-subscription-plan")
+  ...
+  */
 
   @Post("cancel-subscription")
   async cancelSubscription(@Body() body: { subscriptionId: string }) {

@@ -100,7 +100,7 @@ export default function ProductsSimplePage() {
               </h3>
               <p className="text-gray-600 mb-2">{product.description}</p>
               <p className="text-2xl font-bold text-blue-600 mb-4">
-                ₹{(product.price / 100).toFixed(2)}
+                Rs. {(product.price / 100).toFixed(2)}
               </p>
               <button
                 onClick={() => handleAddToCart(product.id, product.name)}

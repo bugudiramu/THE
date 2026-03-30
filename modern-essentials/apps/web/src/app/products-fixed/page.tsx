@@ -34,30 +34,30 @@ export default function ProductsFixedPage() {
           name: "Fresh Regular Eggs",
           description:
             "Fresh farm eggs from free-range chickens. Perfect for breakfast and baking.",
-          price: 12000, // ₹120.00
+          price: 12000, // Rs. 120.00
           sku: "EGG001",
           category: "REGULAR_EGGS",
-          subPrice: 10800, // ₹108.00 with 10% savings
+          subPrice: 10800, // Rs. 108.00 with 10% savings
         },
         {
           id: "cmn1hvz3t00027kz4psycn7gi",
           name: "Organic Brown Eggs",
           description:
             "Premium organic brown eggs from certified organic farms.",
-          price: 15000, // ₹150.00
+          price: 15000, // Rs. 150.00
           sku: "EGG002",
           category: "BROWN_EGGS",
-          subPrice: 13200, // ₹132.00 with 12% savings
+          subPrice: 13200, // Rs. 132.00 with 12% savings
         },
         {
           id: "cmn1hvz3t00047kz4b2sjt4ps",
           name: "High-Protein Eggs",
           description:
             "Extra high-protein eggs with enhanced nutritional value. Perfect for fitness enthusiasts.",
-          price: 18000, // ₹180.00
+          price: 18000, // Rs. 180.00
           sku: "EGG003",
           category: "HIGH_PROTEIN_EGGS",
-          subPrice: 15300, // ₹153.00 with 15% savings
+          subPrice: 15300, // Rs. 153.00 with 15% savings
         },
       ];
 
@@ -110,7 +110,7 @@ export default function ProductsFixedPage() {
 
                 <div className="flex items-baseline space-x-2 mb-4">
                   <span className="text-2xl font-bold text-gray-900">
-                    ₹{(product.price / 100).toFixed(2)}
+                    Rs. {(product.price / 100).toFixed(2)}
                   </span>
                   {product.subPrice && (
                     <span className="text-sm text-green-600 font-medium">

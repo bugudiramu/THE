@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Card, CardContent, RadioGroup, RadioGroupItem, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from "@modern-essentials/ui";
 interface SubscriptionToggleProps {
-  price: number; 
-  subPrice?: number; 
+  price: number;
+  subPrice?: number;
   onSubscriptionChange: (isSubscription: boolean, frequency: string) => void;
 }
 
@@ -55,8 +55,8 @@ export default function SubscriptionToggle({
                <div className="mt-2">
                  <p className="font-semibold text-sm mb-1 text-foreground">Subscribe & Save</p>
                  <p className="text-xl font-bold tracking-tight text-foreground">
-                   ₹{subPrice ? (subPrice / 100).toFixed(2) : (price / 100).toFixed(2)} 
-                   <span className="text-xs font-normal text-muted-foreground ml-2 line-through">₹{(price / 100).toFixed(2)}</span>
+                   Rs. {subPrice ? (subPrice / 100).toFixed(2) : (price / 100).toFixed(2)}
+                   <span className="text-xs font-normal text-muted-foreground ml-2 line-through">Rs. {(price / 100).toFixed(2)}</span>
                  </p>
                </div>
             </CardContent>
@@ -79,7 +79,7 @@ export default function SubscriptionToggle({
                <div className="mt-2 text-left">
                  <p className="font-medium text-sm mb-1 text-foreground">One-time Purchase</p>
                  <p className="text-xl font-bold tracking-tight text-foreground">
-                   ₹{(price / 100).toFixed(2)}
+                   Rs. {(price / 100).toFixed(2)}
                  </p>
                </div>
             </CardContent>

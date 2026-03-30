@@ -285,13 +285,10 @@ docker compose up -d
 
 - **Set up environment variables**
 
-cp apps/api/.env.example apps/api/.env
+cp .env.example .env
 
-cp apps/web/.env.example apps/web/.env.local
-
-cp apps/admin/.env.example apps/admin/.env.local
-
-\# Fill in values - see Section 5.5 for full env var catalogue
+# Fill in values - see Section 5.5 for full env var catalogue
+# Note: A single .env at the root is shared across all apps via symlinks.
 
 - **Run database migrations + seed**
 
@@ -317,9 +314,9 @@ pnpm dev
 
 ## **5.5 Environment Variables Catalogue**
 
-_Every .env key used across the platform. Keep these in a password manager (1Password / Bitwarden). Never commit .env files. Add new keys to .env.example with a description comment._
+_A single `.env` file at the repository root contains all configuration for all applications and packages. Symlinks in each directory point back to this root file for local development._
 
-### **apps/api/.env**
+### **Repository Root: .env**
 
 | **Variable**             | **Description**                   | **Where to get it**                      |
 | ------------------------ | --------------------------------- | ---------------------------------------- |
@@ -343,9 +340,7 @@ _Every .env key used across the platform. Keep these in a password manager (1Pas
 | FRONTEND_URL             | Storefront origin for CORS        | <http://localhost:3000> local            |
 | ADMIN_URL                | Admin dashboard origin for CORS   | <http://localhost:3001> local            |
 
-### **apps/web/.env.local + apps/admin/.env.local**
-
-| **Variable**                      | **Description**                                  | **Where to get it**                                 |
+| **Next.js Public Variables**      | **Description**                                  | **Where to get it**                                 |
 | --------------------------------- | ------------------------------------------------ | --------------------------------------------------- |
 | NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY | Clerk client-side publishable key                | Clerk dashboard → API Keys                          |
 | CLERK_SECRET_KEY                  | Clerk secret (used in Next.js server components) | Clerk dashboard → API Keys                          |

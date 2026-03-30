@@ -33,7 +33,7 @@ https://your-domain.com/api/auth/clerk/callback
 ### Step 3: Configure Webhooks (Optional but Recommended)
 1. Go to **"Webhooks"** section
 2. Add webhook URL: `http://localhost:4000/webhooks/clerk`
-3. Copy the webhook secret and add to your `.env.local`:
+3. Copy the webhook secret and add to your `.env`:
 ```
 CLERK_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 ```
@@ -54,7 +54,7 @@ Clerk needs to know where to redirect users after authentication. Without proper
 
 ## Current Environment Variables
 
-Your `.env.local` should have:
+Your `.env` should have:
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_cmFyZS13b21iYXQtMTguY2xlcmsuYWNjb3VudHMuZGV2JA
 CLERK_SECRET_KEY=sk_test_gEMAjWACxHMFMGk5KE0TFlubbTmGMoRTZ6ZZGXldKf

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import Razorpay from "razorpay";
 import { PrismaService } from "../../common/prisma.service";
-import { CreateOrderDto, RazorpayOrderResponseDto } from "./checkout.dto";
+import { CreateOrderDto, RazorpayOrderResponseDto, RazorpaySubscriptionResponseDto } from "./checkout.dto";
 
 @Injectable()
 export class CheckoutService {
@@ -11,6 +11,86 @@ export class CheckoutService {
     this.razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+  }
+
+  async createSubscription(
+    userId: string,
+    createOrderDto: CreateOrderDto,
+  ): Promise<RazorpaySubscriptionResponseDto> {
+    const subItems = createOrderDto.items.filter((item) => item.isSubscription);
+    const oneTimeItems = createOrderDto.items.filter((item) => !item.isSubscription);
+
+    if (subItems.length === 0) {
+      throw new BadRequestException("No subscription items found in cart");
+    }
+
+    // Calculate recurring total (usually there's only one sub item type per order in simple D2C, 
+    // but we support multiple by creating a custom plan name)
+    const recurringAmount = subItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const upfrontAmount = oneTimeItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    try {
+      // 1. Get or Create a Razorpay Plan for this specific amount/frequency
+      // Note: We use the first item's frequency as the primary frequency for simplicity
+      const frequency = (subItems[0].frequency?.toLowerCase() || "weekly") as "weekly" | "monthly";
+      const planName = `Modern Essentials ${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Subscription - ₹${recurringAmount / 100}`;
+      
+      const razorpayPlan = await this.getOrCreateRazorpayPlan(planName, recurringAmount, frequency);
+
+      // 2. Initiate the Razorpay Subscription
+      const subscriptionOptions: any = {
+        plan_id: razorpayPlan.id,
+        customer_notify: 1,
+        total_count: 52, // 1 year for weekly
+        notes: {
+          userId,
+          isHybrid: upfrontAmount > 0 ? "true" : "false",
+          upfrontAmount: upfrontAmount.toString(),
+        },
+      };
+
+      // 3. Inject Upfront Addon for Hybrid Carts (§3.1)
+      if (upfrontAmount > 0) {
+        subscriptionOptions.addons = [
+          {
+            item: {
+              name: "One-time Items Upfront",
+              amount: upfrontAmount,
+              currency: "INR",
+            },
+          },
+        ];
+      }
+
+      const razorpaySubscription = await this.razorpay.subscriptions.create(subscriptionOptions);
+
+      return {
+        subscriptionId: razorpaySubscription.id,
+        amount: Number(razorpaySubscription.charge_at) || (recurringAmount + upfrontAmount),
+        currency: "INR",
+        key: process.env.RAZORPAY_KEY_ID!,
+        isHybrid: upfrontAmount > 0,
+        upfrontAmount: upfrontAmount,
+      };
+    } catch (error) {
+      console.error("Razorpay subscription creation failed:", error);
+      throw new BadRequestException("Failed to initiate subscription mandate");
+    }
+  }
+
+  private async getOrCreateRazorpayPlan(name: string, amount: number, interval: "weekly" | "monthly") {
+    // In a production app, we would cache these in the DB or check if one exists.
+    // For now, we create them dynamically as requested in the plan.
+    return this.razorpay.plans.create({
+      period: interval === "weekly" ? "weekly" : "monthly",
+      interval: 1,
+      item: {
+        name,
+        amount: amount,
+        currency: "INR",
+        description: "Modern Essentials Recurring Order",
+      },
     });
   }
 
@@ -28,7 +108,7 @@ export class CheckoutService {
       const options = {
         amount: totalAmount,
         currency: "INR",
-        receipt: `receipt_${userId}_${Date.now()}`,
+        receipt: `rcpt_${userId.slice(-10)}_${Date.now().toString().slice(-10)}`,
         payment_capture: 1, // Auto-capture payment
         notes: {
           userId,
@@ -63,7 +143,8 @@ export class CheckoutService {
   }
 
   async verifyPayment(paymentData: {
-    razorpay_order_id: string;
+    razorpay_order_id?: string;
+    razorpay_subscription_id?: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
     userId: string;
@@ -71,6 +152,7 @@ export class CheckoutService {
   }) {
     const {
       razorpay_order_id,
+      razorpay_subscription_id,
       razorpay_payment_id,
       razorpay_signature,
       userId,
@@ -78,11 +160,18 @@ export class CheckoutService {
     } = paymentData;
 
     try {
-      // Verify signature using crypto
+      // 1. Verify signature using crypto
       const crypto = require("crypto");
-      const text = `${razorpay_order_id}|${razorpay_payment_id}`;
+      const secret = process.env.RAZORPAY_KEY_SECRET!;
+      
+      // For subscriptions, the signature is based on payment_id + subscription_id
+      // For orders, it's order_id + payment_id
+      const text = razorpay_subscription_id 
+        ? `${razorpay_payment_id}|${razorpay_subscription_id}`
+        : `${razorpay_order_id}|${razorpay_payment_id}`;
+      
       const generated_signature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+        .createHmac("sha256", secret)
         .update(text)
         .digest("hex");
 
@@ -90,54 +179,116 @@ export class CheckoutService {
         throw new BadRequestException("Invalid payment signature");
       }
 
-      // Create order in database
-      const order = await this.prisma.order.create({
-        data: {
-          userId,
-          status: "PAID",
-          type: "ONE_TIME",
-          total: orderData.items.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0,
-          ),
-          placedAt: new Date(),
-        },
+      // 1.5 Ensure user exists in DB before transaction (Secondary safety check)
+      const dbUser = await this.prisma.user.findUnique({
+        where: { id: userId }
       });
 
-      // Create order items
-      for (const item of orderData.items) {
-        await this.prisma.orderItem.create({
-          data: {
-            orderId: order.id,
-            productId: item.productId,
-            qty: item.quantity,
-            price: item.price,
-            total: item.price * item.quantity,
-          },
-        });
+      if (!dbUser) {
+        console.error(`Checkout error: User with internal ID ${userId} not found in DB`);
+        throw new BadRequestException("User profile not found. Please ensure you are logged in.");
       }
 
-      // Clear user's cart
-      const cart = await this.prisma.cart.findUnique({
-        where: { userId },
+      return await this.prisma.$transaction(async (tx) => {
+        // 2. Handle Subscription Items
+        const subItems = orderData.items.filter(item => item.isSubscription);
+        let subscriptionId: string | undefined;
+
+        if (subItems.length > 0 && razorpay_subscription_id) {
+          // We assume one primary subscription for now
+          const primarySub = subItems[0];
+          const frequency = (primarySub.frequency || 'WEEKLY') as any;
+
+          const subscription = await tx.subscription.create({
+            data: {
+              userId: dbUser.id,
+              productId: primarySub.productId,
+              quantity: primarySub.quantity,
+              frequency,
+              status: 'ACTIVE',
+              nextBillingAt: this.calculateNextBillingDate(frequency),
+            },
+          });
+          
+          subscriptionId = subscription.id;
+
+          // Log subscription event
+          await tx.subscriptionEvent.create({
+            data: {
+              subscriptionId: subscription.id,
+              eventType: 'ACTIVATED',
+              description: `Subscription activated via Razorpay ID: ${razorpay_subscription_id}`,
+              metadata: { razorpay_subscription_id, razorpay_payment_id }
+            }
+          });
+        }
+
+        // 3. Handle One-Time Items (or Upfront Addons for hybrid carts)
+        const oneTimeItems = orderData.items.filter(item => !item.isSubscription);
+        let orderId: string | undefined;
+
+        // Even if it's 100% subscription, the first delivery is an Order
+        // If it's hybrid, oneTimeItems are also included here
+        const itemsToOrder = [...oneTimeItems];
+        if (subItems.length > 0) {
+          itemsToOrder.push(...subItems);
+        }
+
+        if (itemsToOrder.length > 0) {
+          const order = await tx.order.create({
+            data: {
+              userId: dbUser.id,
+              subscriptionId, // Link to the sub if this is the first delivery
+              status: "PAID",
+              type: subItems.length > 0 ? "SUBSCRIPTION_RENEWAL" : "ONE_TIME", // First sub delivery is effectively a renewal type for fulfillment
+              total: itemsToOrder.reduce(
+                (sum, item) => sum + item.price * item.quantity,
+                0,
+              ),
+              placedAt: new Date(),
+            },
+          });
+          orderId = order.id;
+
+          // Create order items
+          for (const item of itemsToOrder) {
+            await tx.orderItem.create({
+              data: {
+                orderId: order.id,
+                productId: item.productId,
+                qty: item.quantity,
+                price: item.price,
+                total: item.price * item.quantity,
+              },
+            });
+          }
+        }
+
+        // 4. Clear user's cart
+        const cart = await tx.cart.findUnique({ where: { userId: dbUser.id } });
+        if (cart) {
+          await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+        }
+
+        return {
+          orderId,
+          subscriptionId,
+          paymentId: razorpay_payment_id,
+          status: "SUCCESS",
+        };
       });
-
-      if (cart) {
-        await this.prisma.cartItem.deleteMany({
-          where: { cartId: cart.id },
-        });
-      }
-
-      return {
-        orderId: order.id,
-        paymentId: razorpay_payment_id,
-        amount: order.total,
-        status: order.status,
-      };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment verification failed:", error);
-      throw new BadRequestException("Payment verification failed");
+      throw new BadRequestException(error.message || "Payment verification failed");
     }
+  }
+
+  private calculateNextBillingDate(frequency: string): Date {
+    const date = new Date();
+    if (frequency === 'WEEKLY') date.setDate(date.getDate() + 7);
+    else if (frequency === 'FORTNIGHTLY') date.setDate(date.getDate() + 14);
+    else if (frequency === 'MONTHLY') date.setMonth(date.getMonth() + 1);
+    return date;
   }
 
   async createSubscriptionPlan(
@@ -163,21 +314,6 @@ export class CheckoutService {
     } catch (error) {
       console.error("Subscription plan creation failed:", error);
       throw new BadRequestException("Failed to create subscription plan");
-    }
-  }
-
-  async createSubscription(planId: string, _customerId: string) {
-    try {
-      const subscription = await this.razorpay.subscriptions.create({
-        plan_id: planId,
-        customer_notify: 1,
-        total_count: 12, // 12 billing cycles
-      });
-
-      return subscription;
-    } catch (error) {
-      console.error("Subscription creation failed:", error);
-      throw new BadRequestException("Failed to create subscription");
     }
   }
 

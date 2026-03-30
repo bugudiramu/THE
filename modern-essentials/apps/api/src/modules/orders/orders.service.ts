@@ -215,12 +215,10 @@ export class OrdersService {
     endOfDay.setHours(23, 59, 59, 999);
 
     // Get today's orders that need picking (PAID status)
+    // We look for all orders with status PAID, not just placed today, 
+    // to handle backlog or late-night orders.
     const orders = await this.prisma.order.findMany({
       where: {
-        placedAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
         status: "PAID",
       },
       include: {
@@ -248,26 +246,16 @@ export class OrdersService {
       orderBy: {
         expiresAt: "asc", // FEFO: First Expired, First Out — NON-NEGOTIABLE
       },
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            sku: true,
-          },
-        },
-      },
     });
 
     // Build pick list: map each order item to the soonest-expiring batch
     const pickListItems: Array<{
       orderId: string;
-      productId: string;
-      productSku: string;
+      sku: string;
       productName: string;
-      qtyNeeded: number;
-      batchId: string;
-      binLocation: string | null;
+      qty: number;
+      inventoryBatchId: string;
+      binLocation: string;
       expiresAt: Date;
     }> = [];
 
@@ -283,24 +271,22 @@ export class OrdersService {
           const batch = matchingBatches[0];
           pickListItems.push({
             orderId: order.id,
-            productId: item.productId,
-            productSku: item.product.sku,
+            sku: item.product.sku,
             productName: item.product.name,
-            qtyNeeded: item.qty,
-            batchId: batch.id,
-            binLocation: batch.locationId,
+            qty: item.qty,
+            inventoryBatchId: batch.id,
+            binLocation: batch.locationId || "UNASSIGNED",
             expiresAt: batch.expiresAt,
           });
         } else {
-          // No batch available — flag it
+          // No batch available — flag it with placeholder data to avoid UI break
           pickListItems.push({
             orderId: order.id,
-            productId: item.productId,
-            productSku: item.product.sku,
+            sku: item.product.sku,
             productName: item.product.name,
-            qtyNeeded: item.qty,
-            batchId: "NO_STOCK",
-            binLocation: null,
+            qty: item.qty,
+            inventoryBatchId: "NO_STOCK",
+            binLocation: "N/A",
             expiresAt: new Date(0),
           });
         }
@@ -309,15 +295,14 @@ export class OrdersService {
 
     // Sort final list by product SKU for picking efficiency, then by expiry
     pickListItems.sort((a, b) => {
-      if (a.productSku !== b.productSku) {
-        return a.productSku.localeCompare(b.productSku);
+      if (a.sku !== b.sku) {
+        return a.sku.localeCompare(b.sku);
       }
       return a.expiresAt.getTime() - b.expiresAt.getTime();
     });
 
     return {
-      generatedAt: new Date(),
-      orderCount: orders.length,
+      generatedAt: new Date().toISOString(),
       items: pickListItems,
     };
   }

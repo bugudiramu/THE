@@ -1,4 +1,5 @@
-import { IsInt, IsPositive, IsString } from "class-validator";
+import { IsInt, IsPositive, IsString, IsBoolean, IsOptional, IsEnum } from "class-validator";
+import { SubscriptionFrequency } from "@modern-essentials/db";
 
 export class AddToCartDto {
   @IsString()
@@ -7,6 +8,14 @@ export class AddToCartDto {
   @IsInt()
   @IsPositive()
   quantity!: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isSubscription?: boolean;
+
+  @IsEnum(SubscriptionFrequency)
+  @IsOptional()
+  frequency?: SubscriptionFrequency;
 }
 
 export class UpdateCartItemDto {
@@ -20,6 +29,8 @@ export class CartItemResponseDto {
   productId!: string;
   quantity!: number;
   priceSnapshot!: number; // in paise
+  isSubscription!: boolean;
+  frequency?: SubscriptionFrequency;
   createdAt!: Date;
   updatedAt!: Date;
   product!: {

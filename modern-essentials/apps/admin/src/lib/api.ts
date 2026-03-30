@@ -37,6 +37,16 @@ export function apiGet<T>(path: string): Promise<T> {
 }
 
 /**
+ * POST request helper.
+ */
+export function apiPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  return apiFetch<T>(path, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/**
  * PATCH request helper.
  */
 export function apiPatch<T>(path: string, body: Record<string, unknown>): Promise<T> {

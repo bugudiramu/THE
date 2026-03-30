@@ -118,12 +118,13 @@ export class CartService {
 
     const cart = await this.getOrCreateCart(userId);
 
-    // Check if item already exists in cart
+    // Check if item already exists in cart (now matching on productId AND isSubscription)
     const existingItem = await this.prisma.cartItem.findUnique({
       where: {
-        cartId_productId: {
+        cartId_productId_isSubscription: {
           cartId: cart.id,
           productId: addToCartDto.productId,
+          isSubscription: addToCartDto.isSubscription || false,
         },
       },
     });
@@ -132,7 +133,10 @@ export class CartService {
       // Update quantity
       await this.prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + addToCartDto.quantity },
+        data: { 
+          quantity: existingItem.quantity + addToCartDto.quantity,
+          frequency: addToCartDto.frequency as any || existingItem.frequency,
+        },
       });
     } else {
       // Add new item
@@ -142,6 +146,8 @@ export class CartService {
           productId: addToCartDto.productId,
           quantity: addToCartDto.quantity,
           priceSnapshot: product.price, // Store current price
+          isSubscription: addToCartDto.isSubscription || false,
+          frequency: addToCartDto.frequency as any,
         },
       });
     }
@@ -221,6 +227,8 @@ export class CartService {
       productId: item.productId,
       quantity: item.quantity,
       priceSnapshot: item.priceSnapshot,
+      isSubscription: item.isSubscription,
+      frequency: item.frequency,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
       product: {

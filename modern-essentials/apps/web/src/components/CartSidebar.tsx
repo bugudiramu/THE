@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useCart } from "../contexts/CartContext";
-import { Button } from "@modern-essentials/ui";
-import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { Button, Badge } from "@modern-essentials/ui";
+import { X, Minus, Plus, Trash2, ShoppingBag, RefreshCcw } from "lucide-react";
 
 export default function CartSidebar() {
   const {
@@ -18,7 +18,7 @@ export default function CartSidebar() {
   } = useCart();
 
   const formatPrice = (priceInPaise: number) => {
-    return `₹${(priceInPaise / 100).toFixed(2)}`;
+    return `Rs. ${(priceInPaise / 100).toFixed(2)}`;
   };
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
@@ -71,7 +71,7 @@ export default function CartSidebar() {
                     <p className="text-muted-foreground max-w-[250px] mx-auto mb-8">
                       Looks like you haven't added any fresh essentials yet.
                     </p>
-                    <Button onClick={closeCart} size="lg" className="px-8 font-semibold shadow-sm tracking-wide">
+                    <Button onClick={closeCart} size="lg" className="px-8 font-semibold shadow-sm tracking-wide text-white">
                       Start Shopping
                     </Button>
                   </div>
@@ -84,7 +84,7 @@ export default function CartSidebar() {
                       >
                         {/* Product Image */}
                         <div className="flex-shrink-0 w-24 h-24 bg-muted/30 rounded-xl border overflow-hidden relative">
-                          {item.product.images.length > 0 ? (
+                          {item.product.images && item.product.images.length > 0 ? (
                             <Image
                               src={item.product.images[0].url}
                               alt={
@@ -108,9 +108,19 @@ export default function CartSidebar() {
                                <h3 className="text-base font-bold text-foreground line-clamp-2 leading-tight pr-4">
                                  {item.product.name}
                                </h3>
-                               <p className="text-xs text-muted-foreground mt-1 tracking-wider uppercase font-medium">
-                                 {item.product.sku}
-                               </p>
+                               <div className="flex flex-wrap gap-2 mt-1.5">
+                                 <p className="text-[10px] text-muted-foreground tracking-wider uppercase font-bold border rounded px-1.5 py-0.5">
+                                   {item.product.sku}
+                                 </p>
+                                 {item.isSubscription ? (
+                                   <Badge variant="default" className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 text-[10px] py-0 px-2 h-5 flex items-center gap-1">
+                                     <RefreshCcw className="w-2.5 h-2.5" />
+                                     {item.frequency || 'WEEKLY'}
+                                   </Badge>
+                                 ) : (
+                                   <Badge variant="outline" className="text-[10px] py-0 px-2 h-5">One-time</Badge>
+                                 )}
+                               </div>
                             </div>
                             <p className="text-base font-bold text-foreground whitespace-nowrap">
                               {formatPrice(item.priceSnapshot * item.quantity)}
@@ -139,10 +149,10 @@ export default function CartSidebar() {
                                 <Plus className="w-3 h-3" />
                               </button>
                             </div>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8"
                               onClick={() => removeItem(item.id)}
                             >
@@ -168,7 +178,7 @@ export default function CartSidebar() {
                   </p>
                   <Button
                     size="lg"
-                    className="w-full text-base font-bold tracking-wide h-14 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+                    className="w-full text-base font-bold tracking-wide h-14 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 text-white"
                     onClick={() => {
                       if (typeof globalThis !== "undefined") {
                         (globalThis as any).location.href = "/checkout";

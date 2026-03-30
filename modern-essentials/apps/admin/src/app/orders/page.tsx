@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { StatusBadge } from "@/components/orders/status-badge";
 import { formatPrice, formatDate } from "@/lib/utils";
+import { apiGet, apiPatch } from "@/lib/api";
 
 interface OrderItem {
   id: string;
@@ -27,8 +28,6 @@ interface StatusCounts {
   counts: Record<string, number>;
   total: number;
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000";
 
 const STATUS_FILTERS = [
   "ALL",
@@ -66,16 +65,10 @@ export default function OrdersPage() {
   const fetchData = async () => {
     try {
       const statusParam = filter !== "ALL" ? `?status=${filter}` : "";
-      const [ordersRes, countsRes] = await Promise.all([
-        fetch(`${API_URL}/admin/orders/today${statusParam}`, {
-          headers: { Authorization: "Bearer test-token" },
-        }),
-        fetch(`${API_URL}/admin/orders/status-counts`, {
-          headers: { Authorization: "Bearer test-token" },
-        }),
+      const [ordersData, countsData] = await Promise.all([
+        apiGet<Order[]>(`admin/orders/today${statusParam}`),
+        apiGet<StatusCounts>("admin/orders/status-counts"),
       ]);
-      const ordersData = (await ordersRes.json()) as Order[];
-      const countsData = (await countsRes.json()) as StatusCounts;
       setOrders(ordersData);
       setCounts(countsData);
     } catch (err) {
@@ -93,14 +86,7 @@ export default function OrdersPage() {
   const handleStatusTransition = async (orderId: string, newStatus: string) => {
     setActionLoading(orderId);
     try {
-      await fetch(`${API_URL}/admin/orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-token",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      await apiPatch(`admin/orders/${orderId}/status`, { status: newStatus });
       await fetchData();
     } catch (err) {
       console.error("Failed to update status:", err);

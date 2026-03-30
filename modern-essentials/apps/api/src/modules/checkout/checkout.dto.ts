@@ -1,4 +1,4 @@
-import { IsArray, IsInt, IsPositive, IsString } from "class-validator";
+import { IsArray, IsInt, IsPositive, IsString, IsBoolean, IsOptional } from "class-validator";
 
 export class CreateOrderDto {
   @IsString()
@@ -34,6 +34,23 @@ export class OrderItemDto {
   @IsInt()
   @IsPositive()
   price!: number; // in paise
+
+  @IsBoolean()
+  @IsOptional()
+  isSubscription?: boolean;
+
+  @IsString()
+  @IsOptional()
+  frequency?: string; // e.g. 'WEEKLY', 'MONTHLY'
+}
+
+export class RazorpaySubscriptionResponseDto {
+  subscriptionId!: string;
+  amount!: number;
+  currency!: string;
+  key!: string;
+  isHybrid!: boolean;
+  upfrontAmount?: number;
 }
 
 export class RazorpayOrderResponseDto {

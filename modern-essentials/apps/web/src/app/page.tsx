@@ -11,7 +11,7 @@ export default function Home(): JSX.Element {
         <p className="mt-4 text-xl text-muted-foreground">Fresh essentials, delivered.</p>
 
         <div className="mt-8 space-x-4">
-          <Button asChild size="lg" className="px-8 text-lg hover:scale-105 transition-all shadow-md">
+          <Button asChild size="lg" className="px-8 text-lg hover:scale-105 transition-all shadow-md text-white">
             <Link href="/products">
               Browse Products
             </Link>

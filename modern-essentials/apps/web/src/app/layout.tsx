@@ -1,12 +1,12 @@
+import UserHeader from "@/components/UserHeader";
+import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { CartProvider } from "../contexts/CartContext";
 import "./globals.css";
-import { Inter } from "next/font/google";
-import { cn } from "@/lib/utils";
-import UserHeader from "@/components/UserHeader";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Modern Essentials",
@@ -24,9 +24,7 @@ export default function RootLayout({
         <html lang="en" className={cn("font-sans antialiased", inter.variable)}>
           <body className="bg-background text-foreground min-h-screen flex flex-col">
             <UserHeader />
-            <main className="flex-grow">
-              {children}
-            </main>
+            <main className="flex-grow">{children}</main>
           </body>
         </html>
       </CartProvider>

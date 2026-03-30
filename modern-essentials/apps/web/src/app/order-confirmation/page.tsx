@@ -17,7 +17,7 @@ function OrderConfirmationContent() {
   const [loading, setLoading] = useState(true);
 
   const formatPrice = (priceInPaise: number) => {
-    return `₹${(priceInPaise / 100).toFixed(2)}`;
+    return `Rs. ${(priceInPaise / 100).toFixed(2)}`;
   };
 
   useEffect(() => {

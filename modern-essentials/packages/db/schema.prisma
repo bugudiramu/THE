@@ -318,6 +318,8 @@ model CartItem {
   productId     String   @map("product_id")
   quantity      Int
   priceSnapshot Int      @map("price_snapshot") // Price at time of adding (in paise)
+  isSubscription Boolean  @default(false) @map("is_subscription")
+  frequency     SubscriptionFrequency?
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -325,6 +327,6 @@ model CartItem {
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([cartId, productId]) // One product per cart
+  @@unique([cartId, productId, isSubscription]) // Allow same product as both one-time and sub
   @@map("cart_items")
 }

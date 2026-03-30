@@ -13,7 +13,7 @@ export async function GET() {
       nextBillingAt: new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000,
       ).toISOString(),
-      price: 10800, // ₹108.00 with subscription savings
+      price: 10800, // Rs. 108.00 with subscription savings
       savings: 10,
       product: {
         id: "cmn1hvz3700007kz4vbi8cc9h",
@@ -34,7 +34,7 @@ export async function GET() {
       nextBillingAt: new Date(
         Date.now() + 14 * 24 * 60 * 60 * 1000,
       ).toISOString(),
-      price: 26400, // ₹264.00 with subscription savings
+      price: 26400, // Rs. 264.00 with subscription savings
       savings: 12,
       product: {
         id: "cmn1hvz3t00027kz4psycn7gi",

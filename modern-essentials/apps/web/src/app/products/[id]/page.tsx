@@ -37,7 +37,8 @@ async function getProduct(id: string) {
 export default function ProductDetailPage() {
   const params = useParams();
   const [product, setProduct] = useState<Product | null>(null);
-  const [isSubscription, setIsSubscription] = useState(false);
+  const [isSubscription, setIsSubscription] = useState(true);
+  const [frequency, setFrequency] = useState("WEEKLY");
   const [quantity, setQuantity] = useState(1); // 1 Unit
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,15 +65,16 @@ export default function ProductDetailPage() {
     if (!product) return;
 
     try {
-      await addItem(product.id, quantity);
+      await addItem(product, quantity, isSubscription, frequency);
       console.log(`${product.name} added to cart!`);
     } catch (err) {
       console.error("Failed to add to cart");
     }
   };
 
-  const handleSubscriptionChange = (subscribe: boolean) => {
+  const handleSubscriptionChange = (subscribe: boolean, newFrequency: string) => {
     setIsSubscription(subscribe);
+    if (newFrequency) setFrequency(newFrequency);
   };
 
   if (loading) {
@@ -139,7 +141,7 @@ export default function ProductDetailPage() {
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground mb-4">
               {product.name}
             </h1>
-            
+
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
               {product.description || "Farm fresh directly to your doorstep. Perfect for daily consumption, packed with extreme care and zero compromises."}
             </p>
@@ -183,14 +185,14 @@ export default function ProductDetailPage() {
                     </div>
                 </div>
 
-                <Button 
+                <Button
                   onClick={handleAddToCart}
-                  size="lg" 
-                  className="w-full text-base font-bold tracking-wide h-14"
+                  size="lg"
+                  className="w-full text-base font-bold tracking-wide h-14 text-white"
                 >
                   {isSubscription ? "Subscribe Now" : "Add to Cart"}
                 </Button>
-                
+
                 <p className="text-xs text-center text-muted-foreground flex items-center justify-center pt-2">
                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                    No commitments. Cancel or pause anytime.

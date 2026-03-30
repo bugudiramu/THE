@@ -170,7 +170,7 @@ export default function SubscriptionsPage() {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Price</span>
                       <span className="font-medium">
-                        ₹{(subscription.product.price / 100).toFixed(2)}
+                        Rs. {(subscription.product.price / 100).toFixed(2)}
                       </span>
                     </div>
 
@@ -178,7 +178,7 @@ export default function SubscriptionsPage() {
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-500">Savings</span>
                         <span className="font-medium text-green-600">
-                          ₹{(subscription.savings / 100).toFixed(2)}
+                          Rs. {(subscription.savings / 100).toFixed(2)}
                         </span>
                       </div>
                     )}

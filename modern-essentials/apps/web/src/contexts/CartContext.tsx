@@ -14,6 +14,8 @@ interface CartItem {
   productId: string;
   quantity: number;
   priceSnapshot: number;
+  isSubscription: boolean;
+  frequency?: string;
   createdAt: string;
   updatedAt: string;
   product: {
@@ -21,6 +23,7 @@ interface CartItem {
     name: string;
     sku: string;
     price: number;
+    subPrice?: number;
     images: { url: string; alt?: string }[];
   };
 }
@@ -34,7 +37,7 @@ interface CartState {
 }
 
 interface CartContextType extends CartState {
-  addItem: (product: any, quantity: number) => Promise<void>;
+  addItem: (product: any, quantity: number, isSubscription?: boolean, frequency?: string) => Promise<void>;
   updateItem: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -93,9 +96,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Helper to persist to local storage seamlessly
   const persistCart = (items: CartItem[]) => {
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-    const totalAmount = items.reduce((acc, item) => acc + (item.quantity * item.product.price), 0);
+    const totalAmount = items.reduce((acc, item) => acc + (item.quantity * item.priceSnapshot), 0);
     const cartData = { items, totalItems, totalAmount };
-    
+
     dispatch({ type: "SET_CART", payload: cartData });
     try {
       if (typeof window !== "undefined") {
@@ -125,20 +128,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addItem = async (product: any, quantity: number) => {
+  const addItem = async (product: any, quantity: number, isSubscription = false, frequency = "WEEKLY") => {
     dispatch({ type: "SET_LOADING", payload: true });
     try {
       const currentItems = [...state.items];
-      const existingIndex = currentItems.findIndex(i => i.productId === product.id);
+      const existingIndex = currentItems.findIndex(
+        i => i.productId === product.id && i.isSubscription === isSubscription
+      );
 
       if (existingIndex >= 0) {
         currentItems[existingIndex].quantity += quantity;
+        if (isSubscription) {
+          currentItems[existingIndex].frequency = frequency;
+        }
       } else {
         currentItems.push({
-          id: Math.random().toString(),
+          id: Math.random().toString(36).substring(7),
           productId: product.id,
           quantity,
-          priceSnapshot: product.price,
+          priceSnapshot: isSubscription ? (product.subPrice || product.price) : product.price,
+          isSubscription,
+          frequency: isSubscription ? frequency : undefined,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           product: {
@@ -146,11 +156,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
             name: product.name,
             sku: product.sku || '',
             price: product.price,
+            subPrice: product.subPrice,
             images: product.images || []
           }
         });
       }
-      
+
       persistCart(currentItems);
       dispatch({ type: "OPEN_CART" }); // Instantly pop open the cart drawer!
     } catch (error) {
