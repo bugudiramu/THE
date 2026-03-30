@@ -239,12 +239,17 @@ export class CheckoutService {
             data: {
               userId: dbUser.id,
               subscriptionId, // Link to the sub if this is the first delivery
+              razorpayOrderId: razorpay_order_id,
               status: "PAID",
               type: subItems.length > 0 ? "SUBSCRIPTION_RENEWAL" : "ONE_TIME", // First sub delivery is effectively a renewal type for fulfillment
               total: itemsToOrder.reduce(
                 (sum, item) => sum + item.price * item.quantity,
                 0,
               ),
+              addressLine1: orderData.address,
+              city: orderData.city,
+              state: orderData.state,
+              postalCode: (orderData as any).pincode, // Map from pincode in DTO
               placedAt: new Date(),
             },
           });
@@ -264,7 +269,7 @@ export class CheckoutService {
           }
         }
 
-        // 4. Clear user's cart
+        // 4. Clear user's cart (Atomically within transaction)
         const cart = await tx.cart.findUnique({ where: { userId: dbUser.id } });
         if (cart) {
           await tx.cartItem.deleteMany({ where: { cartId: cart.id } });

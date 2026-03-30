@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { OrderStatusAction } from "./orders.dto";
 
 // Legal status transitions for the ops team
@@ -21,7 +22,10 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Get today's orders with optional status filter.
@@ -72,6 +76,32 @@ export class OrdersService {
     });
 
     return orders;
+  }
+
+  /**
+   * Get order history for a specific user.
+   */
+  async getUserOrders(userId: string) {
+    return this.prisma.order.findMany({
+      where: { userId },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                sku: true,
+                category: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        placedAt: "desc",
+      },
+    });
   }
 
   /**
@@ -159,9 +189,21 @@ export class OrdersService {
    * Transition order status with validation.
    * Enforces legal transitions only (see VALID_TRANSITIONS map).
    */
-  async transitionStatus(orderId: string, newStatus: OrderStatusAction, note?: string) {
+  async transitionStatus(
+    orderId: string,
+    newStatus: OrderStatusAction,
+    note?: string,
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
+      include: {
+        user: {
+          select: {
+            phone: true,
+            email: true,
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -184,6 +226,12 @@ export class OrdersService {
         status: newStatus,
       },
       include: {
+        user: {
+          select: {
+            phone: true,
+            email: true,
+          },
+        },
         items: {
           include: {
             product: {
@@ -193,6 +241,37 @@ export class OrdersService {
         },
       },
     });
+
+    // TRIGGER NOTIFICATIONS based on the new status
+    try {
+      if (newStatus === "DISPATCHED" && order.user.email) {
+        await this.notificationsService.sendOrderDispatched(
+          order.user.email,
+          order.user.phone,
+          {
+            id: order.id,
+            userName: order.user.email.split("@")[0],
+            trackingUrl: "https://modernessentials.in/track/" + order.id,
+          },
+        );
+      } else if (newStatus === "DELIVERED" && order.user.email) {
+        await this.notificationsService.sendOrderDelivered(
+          order.user.email,
+          order.user.phone,
+          {
+            id: order.id,
+            userName: order.user.email.split("@")[0],
+          },
+        );
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(
+        `Failed to trigger notification for order ${orderId}: ${errorMessage}`,
+      );
+      // We don't throw here to avoid rolling back the status update if notification fails
+    }
 
     this.logger.log(
       `Order ${orderId}: ${currentStatus} → ${newStatus}${note ? ` (${note})` : ""}`,
@@ -215,8 +294,6 @@ export class OrdersService {
     endOfDay.setHours(23, 59, 59, 999);
 
     // Get today's orders that need picking (PAID status)
-    // We look for all orders with status PAID, not just placed today, 
-    // to handle backlog or late-night orders.
     const orders = await this.prisma.order.findMany({
       where: {
         status: "PAID",
@@ -279,7 +356,7 @@ export class OrdersService {
             expiresAt: batch.expiresAt,
           });
         } else {
-          // No batch available — flag it with placeholder data to avoid UI break
+          // No batch available
           pickListItems.push({
             orderId: order.id,
             sku: item.product.sku,
@@ -293,7 +370,7 @@ export class OrdersService {
       }
     }
 
-    // Sort final list by product SKU for picking efficiency, then by expiry
+    // Sort final list by product SKU for picking efficiency
     pickListItems.sort((a, b) => {
       if (a.sku !== b.sku) {
         return a.sku.localeCompare(b.sku);
@@ -308,7 +385,7 @@ export class OrdersService {
   }
 
   /**
-   * Generate dispatch manifest: orders grouped by delivery area.
+   * Generate dispatch manifest: orders grouped by delivery area (postal code).
    * Shows PACKED orders ready for handoff to couriers.
    */
   async getDispatchManifest() {
@@ -320,10 +397,6 @@ export class OrdersService {
 
     const orders = await this.prisma.order.findMany({
       where: {
-        placedAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
         status: "PACKED",
       },
       include: {
@@ -347,29 +420,47 @@ export class OrdersService {
         },
       },
       orderBy: {
-        placedAt: "asc",
+        postalCode: "asc", // Initial sort by area
       },
     });
 
-    // Group orders for the manifest
-    // Note: Address model not yet in schema, so we generate a flat manifest
-    const manifestItems = orders.map((order) => ({
-      orderId: order.id,
-      customerPhone: order.user.phone,
-      customerEmail: order.user.email,
-      items: order.items.map((item) => ({
-        productName: item.product.name,
-        sku: item.product.sku,
-        qty: item.qty,
-      })),
-      total: order.total,
-      type: order.type,
-    }));
+    // Group orders by postalCode
+    const groups: Record<string, any[]> = {};
+
+    for (const order of orders) {
+      const area = order.postalCode || "UNKNOWN";
+      if (!groups[area]) {
+        groups[area] = [];
+      }
+
+      groups[area].push({
+        orderId: order.id,
+        customerPhone: order.user.phone,
+        customerEmail: order.user.email,
+        address: {
+          line1: order.addressLine1,
+          city: order.city,
+          state: order.state,
+          postalCode: order.postalCode,
+        },
+        items: order.items.map((item) => ({
+          productName: item.product.name,
+          sku: item.product.sku,
+          qty: item.qty,
+        })),
+        total: order.total,
+        type: order.type,
+      });
+    }
 
     return {
       generatedAt: new Date(),
       orderCount: orders.length,
-      orders: manifestItems,
+      areaCount: Object.keys(groups).length,
+      manifests: Object.entries(groups).map(([postalCode, areaOrders]) => ({
+        postalCode,
+        orders: areaOrders,
+      })),
     };
   }
 }

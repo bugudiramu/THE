@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.6",
+    "@modern-essentials/db": "workspace:*",
     "@modern-essentials/types": "workspace:*",
     "@modern-essentials/utils": "workspace:*",
+    "@prisma/client": "^5.22.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
     "next": "14.2.0",

@@ -1,11 +1,13 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import CartButton from "./CartButton";
 import CartSidebar from "./CartSidebar";
 
 export default function UserHeader() {
+  const { isSignedIn } = useAuth();
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,6 +26,14 @@ export default function UserHeader() {
                 >
                   Shop
                 </Link>
+                {isSignedIn && (
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground tracking-wide uppercase"
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <Link
                   href="#"
                   className="flex items-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground tracking-wide uppercase"

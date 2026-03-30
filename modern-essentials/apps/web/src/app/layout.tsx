@@ -1,4 +1,6 @@
 import UserHeader from "@/components/UserHeader";
+import Footer from "@/components/Footer";
+import CartSidebar from "@/components/CartSidebar";
 import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
@@ -24,7 +26,9 @@ export default function RootLayout({
         <html lang="en" className={cn("font-sans antialiased", inter.variable)}>
           <body className="bg-background text-foreground min-h-screen flex flex-col">
             <UserHeader />
+            <CartSidebar />
             <main className="flex-grow">{children}</main>
+            <Footer />
           </body>
         </html>
       </CartProvider>

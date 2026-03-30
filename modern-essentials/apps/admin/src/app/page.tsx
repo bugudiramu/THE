@@ -1,8 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
-import { apiGet } from "@/lib/api";
+import { PrismaClient } from "@modern-essentials/db";
 import {
   ClipboardList,
   PackageCheck,
@@ -12,10 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-interface StatusCounts {
-  counts: Record<string, number>;
-  total: number;
-}
+const prisma = new PrismaClient();
 
 const statusCards = [
   {
@@ -65,63 +59,49 @@ const exceptionCards = [
   },
 ];
 
-export default function DashboardPage() {
-  const [data, setData] = useState<StatusCounts>({ counts: {}, total: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+async function getDashboardData() {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        setError(null);
-        const counts = await apiGet<StatusCounts>("admin/orders/status-counts");
-        // Apply default zeros explicitly so map works nicely
-        const filledCounts = {
-          PENDING: 0,
-          PAID: 0,
-          PICKED: 0,
-          PACKED: 0,
-          DISPATCHED: 0,
-          DELIVERED: 0,
-          CANCELLED: 0,
-          PAYMENT_FAILED: 0,
-          REFUNDED: 0,
-          ...counts.counts,
-        };
-        setData({ counts: filledCounts, total: counts.total || 0 });
-      } catch (err) {
-        console.error("Dashboard failed to fetch counts:", err);
-        setError(err instanceof Error ? err.message : "Failed to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    }
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
 
-    loadData();
-  }, []);
+  const counts = await prisma.order.groupBy({
+    by: ["status"],
+    where: {
+      placedAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+    _count: {
+      status: true,
+    },
+  });
 
-  if (loading) {
-    return (
-      <div className="flex flex-col h-full">
-        <Header title="Dashboard" />
-        <div className="flex-1 flex items-center justify-center p-6 bg-gray-50">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
+  const statusMap: Record<string, number> = {
+    PENDING: 0,
+    PAID: 0,
+    PICKED: 0,
+    PACKED: 0,
+    DISPATCHED: 0,
+    DELIVERED: 0,
+    CANCELLED: 0,
+    PAYMENT_FAILED: 0,
+    REFUNDED: 0,
+  };
 
-  if (error) {
-    return (
-      <div className="flex flex-col h-full">
-        <Header title="Dashboard" />
-        <div className="flex-1 flex items-center justify-center p-6 bg-gray-50">
-          <div className="text-red-500 text-lg">{error}</div>
-        </div>
-      </div>
-    );
-  }
+  counts.forEach((row) => {
+    statusMap[row.status] = row._count.status;
+  });
+
+  const total = Object.values(statusMap).reduce((sum, v) => sum + v, 0);
+
+  return { counts: statusMap, total };
+}
+
+export default async function DashboardPage() {
+  const data = await getDashboardData();
 
   return (
     <div className="flex flex-col h-full">

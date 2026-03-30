@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "crypto";
 
@@ -53,7 +53,7 @@ export class AwsS3Service {
 
     try {
       await this.s3Client.send(
-        new PutObjectCommand({
+        new DeleteObjectCommand({
           Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
           Key: key,
         }),

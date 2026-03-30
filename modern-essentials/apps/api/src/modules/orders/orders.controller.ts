@@ -8,6 +8,8 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ClerkAuthGuard } from "../../common/guards/clerk-auth.guard";
+import { AdminGuard } from "../../common/guards/admin.guard";
+import { RequireAdmin } from "../../common/decorators/require-admin.decorator";
 import { OrdersService } from "./orders.service";
 import { UpdateOrderStatusDto } from "./orders.dto";
 
@@ -15,10 +17,11 @@ import { UpdateOrderStatusDto } from "./orders.dto";
  * Admin Orders Controller
  *
  * All endpoints are prefixed with /admin/orders.
- * Protected by ClerkAuthGuard — ops team only.
+ * Protected by ClerkAuthGuard and AdminGuard — ops/admin team only.
  */
 @Controller("admin/orders")
-@UseGuards(ClerkAuthGuard)
+@UseGuards(ClerkAuthGuard, AdminGuard)
+@RequireAdmin()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 

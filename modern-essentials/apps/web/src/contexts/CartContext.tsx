@@ -1,6 +1,7 @@
 "use client";
 
 
+import { useUser } from "@clerk/nextjs";
 import {
   createContext,
   ReactNode,
@@ -92,17 +93,14 @@ const initialState: CartState = {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const { isSignedIn, user } = useUser();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-  // Helper to persist to local storage seamlessly
-  const persistCart = (items: CartItem[]) => {
-    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-    const totalAmount = items.reduce((acc, item) => acc + (item.quantity * item.priceSnapshot), 0);
-    const cartData = { items, totalItems, totalAmount };
-
-    dispatch({ type: "SET_CART", payload: cartData });
+  // Helper to persist to local storage as fallback
+  const persistToLocalStorage = (data: { items: CartItem[]; totalItems: number; totalAmount: number }) => {
     try {
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("modern_essentials_cart", JSON.stringify(cartData));
+        window.localStorage.setItem("modern_essentials_cart", JSON.stringify(data));
       }
     } catch (e) {
       console.warn("Could not save to localStorage");
@@ -110,83 +108,203 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchCart = async () => {
-    // Only fetch from localStorage for robust frontend UX
+    dispatch({ type: "SET_LOADING", payload: true });
+    
+    // If logged in, fetch from API
+    if (isSignedIn && user) {
+      try {
+        const token = await user.getToken();
+        const res = await fetch(`${apiUrl}/cart`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        if (res.ok) {
+          const cartData = await res.json();
+          dispatch({ type: "SET_CART", payload: cartData });
+          persistToLocalStorage(cartData);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to fetch cart from API:", error);
+      }
+    }
+
+    // Fallback to localStorage for guest or if API fails
     try {
       if (typeof window !== "undefined") {
         const saved = window.localStorage.getItem("modern_essentials_cart");
         if (saved) {
-          dispatch({ type: "SET_CART", payload: JSON.parse(saved) });
+          const data = JSON.parse(saved);
+          dispatch({ type: "SET_CART", payload: data });
           return;
         }
       }
-      dispatch({
-        type: "SET_CART",
-        payload: { items: [], totalItems: 0, totalAmount: 0 },
-      });
     } catch (e) {
-      dispatch({ type: "SET_CART", payload: { items: [], totalItems: 0, totalAmount: 0 } });
+      console.warn("Failed to parse cart from localStorage");
     }
+
+    dispatch({
+      type: "SET_CART",
+      payload: { items: [], totalItems: 0, totalAmount: 0 },
+    });
   };
 
   const addItem = async (product: any, quantity: number, isSubscription = false, frequency = "WEEKLY") => {
     dispatch({ type: "SET_LOADING", payload: true });
-    try {
-      const currentItems = [...state.items];
-      const existingIndex = currentItems.findIndex(
-        i => i.productId === product.id && i.isSubscription === isSubscription
-      );
-
-      if (existingIndex >= 0) {
-        currentItems[existingIndex].quantity += quantity;
-        if (isSubscription) {
-          currentItems[existingIndex].frequency = frequency;
-        }
-      } else {
-        currentItems.push({
-          id: Math.random().toString(36).substring(7),
-          productId: product.id,
-          quantity,
-          priceSnapshot: isSubscription ? (product.subPrice || product.price) : product.price,
-          isSubscription,
-          frequency: isSubscription ? frequency : undefined,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          product: {
-            id: product.id,
-            name: product.name,
-            sku: product.sku || '',
-            price: product.price,
-            subPrice: product.subPrice,
-            images: product.images || []
-          }
+    
+    if (isSignedIn && user) {
+      try {
+        const token = await user.getToken();
+        const res = await fetch(`${apiUrl}/cart/items`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            productId: product.id,
+            quantity,
+            isSubscription,
+            frequency,
+          }),
         });
-      }
 
-      persistCart(currentItems);
-      dispatch({ type: "OPEN_CART" }); // Instantly pop open the cart drawer!
-    } catch (error) {
-      console.error("Failed to add item to cart:", error);
-    } finally {
-      dispatch({ type: "SET_LOADING", payload: false });
+        if (res.ok) {
+          const cartData = await res.json();
+          dispatch({ type: "SET_CART", payload: cartData });
+          persistToLocalStorage(cartData);
+          dispatch({ type: "OPEN_CART" });
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to add item via API:", error);
+      }
     }
+
+    // Guest mode or API failure
+    const currentItems = [...state.items];
+    const existingIndex = currentItems.findIndex(
+      i => i.productId === product.id && i.isSubscription === isSubscription
+    );
+
+    if (existingIndex >= 0) {
+      currentItems[existingIndex].quantity += quantity;
+    } else {
+      currentItems.push({
+        id: Math.random().toString(36).substring(7),
+        productId: product.id,
+        quantity,
+        priceSnapshot: isSubscription ? (product.subPrice || product.price) : product.price,
+        isSubscription,
+        frequency: isSubscription ? frequency : undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        product: {
+          id: product.id,
+          name: product.name,
+          sku: product.sku || '',
+          price: product.price,
+          subPrice: product.subPrice,
+          images: product.images || []
+        }
+      });
+    }
+
+    const totalItems = currentItems.reduce((acc, item) => acc + item.quantity, 0);
+    const totalAmount = currentItems.reduce((acc, item) => acc + (item.quantity * item.priceSnapshot), 0);
+    const cartData = { items: currentItems, totalItems, totalAmount };
+    
+    dispatch({ type: "SET_CART", payload: cartData });
+    persistToLocalStorage(cartData);
+    dispatch({ type: "OPEN_CART" });
+    dispatch({ type: "SET_LOADING", payload: false });
   };
 
   const updateItem = async (itemId: string, quantity: number) => {
+    if (isSignedIn && user) {
+      try {
+        const token = await user.getToken();
+        const res = await fetch(`${apiUrl}/cart/items/${itemId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ quantity }),
+        });
+
+        if (res.ok) {
+          const cartData = await res.json();
+          dispatch({ type: "SET_CART", payload: cartData });
+          persistToLocalStorage(cartData);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to update item via API:", error);
+      }
+    }
+
     const currentItems = [...state.items];
     const index = currentItems.findIndex(i => i.id === itemId);
     if (index >= 0) {
        currentItems[index].quantity = Math.max(1, quantity);
-       persistCart(currentItems);
+       const totalItems = currentItems.reduce((acc, item) => acc + item.quantity, 0);
+       const totalAmount = currentItems.reduce((acc, item) => acc + (item.quantity * item.priceSnapshot), 0);
+       const cartData = { items: currentItems, totalItems, totalAmount };
+       dispatch({ type: "SET_CART", payload: cartData });
+       persistToLocalStorage(cartData);
     }
   };
 
   const removeItem = async (itemId: string) => {
+    if (isSignedIn && user) {
+      try {
+        const token = await user.getToken();
+        const res = await fetch(`${apiUrl}/cart/items/${itemId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.ok) {
+          const cartData = await res.json();
+          dispatch({ type: "SET_CART", payload: cartData });
+          persistToLocalStorage(cartData);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to remove item via API:", error);
+      }
+    }
+
     const currentItems = state.items.filter(i => i.id !== itemId);
-    persistCart(currentItems);
+    const totalItems = currentItems.reduce((acc, item) => acc + item.quantity, 0);
+    const totalAmount = currentItems.reduce((acc, item) => acc + (item.quantity * item.priceSnapshot), 0);
+    const cartData = { items: currentItems, totalItems, totalAmount };
+    dispatch({ type: "SET_CART", payload: cartData });
+    persistToLocalStorage(cartData);
   };
 
   const clearCart = async () => {
-    persistCart([]);
+    if (isSignedIn && user) {
+      try {
+        const token = await user.getToken();
+        await fetch(`${apiUrl}/cart`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to clear cart via API:", error);
+      }
+    }
+    const cartData = { items: [], totalItems: 0, totalAmount: 0 };
+    dispatch({ type: "SET_CART", payload: cartData });
+    persistToLocalStorage(cartData);
   };
 
   const toggleCart = () => dispatch({ type: "TOGGLE_CART" });
@@ -194,9 +312,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const closeCart = () => dispatch({ type: "CLOSE_CART" });
 
   useEffect(() => {
-    // Safely hydrate the persisted cart from localStorage across checkouts
     fetchCart();
-  }, []);
+  }, [isSignedIn]);
 
   const value: CartContextType = {
     ...state,

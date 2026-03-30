@@ -9,6 +9,7 @@ import { WebhooksModule } from "./modules/webhooks/webhooks.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { BullModule } from "@nestjs/bullmq";
 import { JobsModule } from "./jobs/jobs.module";
+import { PrismaModule } from "./common/prisma.module";
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { JobsModule } from "./jobs/jobs.module";
       isGlobal: true,
       envFilePath: ".env",
     }),
+    PrismaModule,
     CatalogModule,
     CartModule,
     CheckoutModule,

@@ -160,17 +160,18 @@ export class CatalogService {
   }
 
   async remove(id: string): Promise<void> {
-    this.logger.log(`Deleting product: ${id}`);
+    this.logger.log(`Soft deleting product: ${id}`);
 
     try {
-      await this.prisma.product.delete({
+      await this.prisma.product.update({
         where: { id },
+        data: { isActive: false },
       });
 
-      this.logger.log(`Product deleted successfully: ${id}`);
+      this.logger.log(`Product soft deleted successfully: ${id}`);
     } catch (error) {
       this.logger.error(
-        `Failed to delete product: ${(error as Error).message}`,
+        `Failed to soft delete product: ${(error as Error).message}`,
       );
       throw new BadRequestException("Failed to delete product");
     }

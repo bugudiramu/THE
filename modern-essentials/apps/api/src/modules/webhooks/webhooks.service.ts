@@ -41,52 +41,74 @@ export class WebhooksService {
 
     // 2. Process Based on Event Type
     try {
-      const subscriptionEntity = payload.payload?.subscription?.entity;
+      const razorpaySubscriptionId = payload.payload?.subscription?.entity?.id;
+      const razorpayOrderId = payload.payload?.order?.entity?.id || payload.payload?.payment?.entity?.order_id;
 
-      // The mapping from Razorpay Sub ID back to our internal ID isn't directly on the Prisma schema right now, 
-      // but assuming the `notes` field or similar holds our `internalId`, or we rely on a future mapping column.
-      // For now, we mock the transition lookup.
-      const internalSubId = subscriptionEntity?.notes?.internalId || "mock-sub-id";
+      this.logger.log(`Processing Razorpay Event: ${eventType}`);
 
-      this.logger.log(`Processing Razorpay Event: ${eventType} for sub ${internalSubId}`);
+      if (razorpaySubscriptionId) {
+        const subscription = await this.prisma.subscription.findUnique({
+          where: { razorpaySubscriptionId: razorpaySubscriptionId as string },
+        });
 
-      if (internalSubId !== "mock-sub-id") {
-        switch (eventType) {
-          case "subscription.activated":
-            await this.prisma.subscription.update({
-              where: { id: internalSubId },
-              data: { status: "ACTIVE" },
-            });
-            break;
-          case "subscription.charged":
-            // Renewal successful
-            await this.prisma.subscription.update({
-              where: { id: internalSubId },
-              data: { status: "ACTIVE" },
-            });
-            break;
-          case "subscription.payment_failed":
-            // Enter dunning
-            await this.prisma.subscription.update({
-              where: { id: internalSubId },
-              data: { status: "DUNNING" },
-            });
-            // Note: Would queue BullMQ dunning job here
-            break;
-          case "subscription.cancelled":
-            await this.prisma.subscription.update({
-              where: { id: internalSubId },
-              data: { status: "CANCELLED" },
-            });
-            break;
-          case "subscription.paused":
-            await this.prisma.subscription.update({
-              where: { id: internalSubId },
-              data: { status: "PAUSED" },
-            });
-            break;
-          default:
-            this.logger.log(`Unhandled webhook event type: ${eventType}`);
+        if (subscription) {
+          switch (eventType) {
+            case "subscription.activated":
+              await this.prisma.subscription.update({
+                where: { id: subscription.id },
+                data: { status: "ACTIVE" },
+              });
+              break;
+            case "subscription.charged":
+              await this.prisma.subscription.update({
+                where: { id: subscription.id },
+                data: { status: "ACTIVE" },
+              });
+              break;
+            case "subscription.payment_failed":
+              await this.prisma.subscription.update({
+                where: { id: subscription.id },
+                data: { status: "DUNNING" },
+              });
+              break;
+            case "subscription.cancelled":
+              await this.prisma.subscription.update({
+                where: { id: subscription.id },
+                data: { status: "CANCELLED" },
+              });
+              break;
+            case "subscription.paused":
+              await this.prisma.subscription.update({
+                where: { id: subscription.id },
+                data: { status: "PAUSED" },
+              });
+              break;
+          }
+        }
+      }
+
+      if (razorpayOrderId && (eventType === "payment.captured" || eventType === "order.paid")) {
+        const order = await this.prisma.order.findUnique({
+          where: { razorpayOrderId: razorpayOrderId as string },
+        });
+
+        if (order) {
+          await this.prisma.order.update({
+            where: { id: order.id },
+            data: { status: "PAID" },
+          });
+          this.logger.log(`Order ${order.id} marked as PAID via webhook`);
+        } else {
+          // Fallback to updateMany if findUnique fails (e.g. if @unique constraint was just added)
+          const result = await this.prisma.order.updateMany({
+            where: { razorpayOrderId: razorpayOrderId as string },
+            data: { status: "PAID" },
+          });
+          if (result.count > 0) {
+            this.logger.log(`Marked ${result.count} order(s) as PAID via updateMany fallback`);
+          } else {
+            this.logger.warn(`No order found for razorpayOrderId: ${razorpayOrderId}`);
+          }
         }
       }
 

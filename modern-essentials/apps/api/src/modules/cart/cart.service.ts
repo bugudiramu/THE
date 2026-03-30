@@ -12,31 +12,13 @@ export class CartService {
   constructor(private prisma: PrismaService) {}
 
   async getOrCreateCart(userId: string) {
-    // Ensure user exists (for testing purposes)
-    let user = await this.prisma.user.findUnique({
+    // User should already be synced by ClerkAuthGuard
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
     if (!user) {
-      // Create a test user if it doesn't exist
-      try {
-        await this.prisma.user.create({
-          data: {
-            id: userId,
-            email: `test-${userId}@example.com`,
-            phone: `999999${userId.slice(-4)}`, // Use unique phone number
-            clerkId: userId,
-          },
-        });
-      } catch (error) {
-        // User might already exist, try to find by clerkId instead
-        user = await this.prisma.user.findUnique({
-          where: { clerkId: userId },
-        });
-        if (!user) {
-          throw error; // Re-throw if it's a different error
-        }
-      }
+      throw new NotFoundException(`User with ID ${userId} not found. Ensure user is synced via ClerkAuthGuard.`);
     }
 
     let cart = await this.prisma.cart.findUnique({

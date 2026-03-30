@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
+import { ClerkAuthGuard } from "../../common/guards/clerk-auth.guard";
 import {
   CreateSubscriptionDto,
   UpdateSubscriptionDto,
@@ -6,6 +15,7 @@ import {
 import { SubscriptionService } from "./subscription.service";
 
 @Controller("subscriptions")
+@UseGuards(ClerkAuthGuard)
 export class SubscriptionController {
   constructor(private subscriptionService: SubscriptionService) {}
 
@@ -14,7 +24,7 @@ export class SubscriptionController {
     @Req() req: any,
     @Body() createSubscriptionDto: CreateSubscriptionDto,
   ) {
-    const userId = req.user?.id || "test-user-123"; // Temporary fallback
+    const userId = req.user.id;
     return this.subscriptionService.createSubscription(
       userId,
       createSubscriptionDto,
@@ -23,7 +33,7 @@ export class SubscriptionController {
 
   @Get()
   async getUserSubscriptions(@Req() req: any) {
-    const userId = req.user?.id || "test-user-123"; // Temporary fallback
+    const userId = req.user.id;
     return this.subscriptionService.getUserSubscriptions(userId);
   }
 
@@ -33,7 +43,7 @@ export class SubscriptionController {
     @Param("id") subscriptionId: string,
     @Body() body: { durationWeeks: number },
   ) {
-    const userId = req.user?.id || "test-user-123"; // Temporary fallback
+    const userId = req.user.id;
     return this.subscriptionService.pauseSubscription(
       userId,
       subscriptionId,
@@ -46,7 +56,7 @@ export class SubscriptionController {
     @Req() req: any,
     @Param("id") subscriptionId: string,
   ) {
-    const userId = req.user?.id || "test-user-123"; // Temporary fallback
+    const userId = req.user.id;
     return this.subscriptionService.resumeSubscription(userId, subscriptionId);
   }
 
@@ -55,7 +65,7 @@ export class SubscriptionController {
     @Req() req: any,
     @Param("id") subscriptionId: string,
   ) {
-    const userId = req.user?.id || "test-user-123"; // Temporary fallback
+    const userId = req.user.id;
     return this.subscriptionService.cancelSubscription(userId, subscriptionId);
   }
 
@@ -65,7 +75,7 @@ export class SubscriptionController {
     @Param("id") subscriptionId: string,
     @Body() updateDto: UpdateSubscriptionDto,
   ) {
-    const userId = req.user?.id || "test-user-123"; // Temporary fallback
+    const userId = req.user.id;
     return this.subscriptionService.updateSubscription(
       userId,
       subscriptionId,
