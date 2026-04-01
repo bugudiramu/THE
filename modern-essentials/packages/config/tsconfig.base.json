@@ -26,7 +26,8 @@
       "@modern-essentials/db": ["./packages/db"],
       "@modern-essentials/types": ["./packages/types"],
       "@modern-essentials/utils": ["./packages/utils"],
-      "@modern-essentials/email": ["./packages/email"]
+      "@modern-essentials/email": ["./packages/email"],
+      "@modern-essentials/ui": ["./packages/ui"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "build"]

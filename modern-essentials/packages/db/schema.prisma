@@ -99,7 +99,9 @@ model InventoryBatch {
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  product Product @relation(fields: [productId], references: [id])
+  product     Product       @relation(fields: [productId], references: [id])
+  farmBatch   FarmBatch?
+  wastageLogs WastageLog[]
 
   @@index([productId, expiresAt]) // FEFO pick index
   @@index([status, expiresAt])
@@ -118,6 +120,69 @@ enum QCStatus {
   PASS
   QUARANTINE
   REJECT
+}
+
+// Farm registry for sourcing traceability
+model Farm {
+  id           String      @id @default(cuid())
+  name         String
+  location     String
+  contactName  String?     @map("contact_name")
+  contactPhone String?     @map("contact_phone")
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  batches      FarmBatch[]
+
+  @@map("farms")
+}
+
+// Links farm supply to warehouse batch
+model FarmBatch {
+  id                  String   @id @default(cuid())
+  farmId              String   @map("farm_id")
+  productId           String   @map("product_id")
+  inventoryBatchId    String   @unique @map("inventory_batch_id")
+  qtyCollected        Int      @map("qty_collected")
+  collectedAt         DateTime @map("collected_at")
+  qcStatus            QCStatus @default(PENDING) @map("qc_status")
+  temperatureOnArrival Float?   @map("temperature_on_arrival")
+  notes               String?
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  // Relations
+  farm           Farm           @relation(fields: [farmId], references: [id])
+  inventoryBatch InventoryBatch @relation(fields: [inventoryBatchId], references: [id])
+
+  @@map("farm_batches")
+}
+
+// Audit trail for every unit written off
+model WastageLog {
+  id               String        @id @default(cuid())
+  productId        String        @map("product_id")
+  inventoryBatchId String?       @map("inventory_batch_id")
+  qty              Int
+  reason           WastageReason
+  loggedBy         String        @map("logged_by") // Clerk ID or name
+  notes            String?
+  loggedAt         DateTime      @default(now()) @map("logged_at")
+
+  // Relations
+  inventoryBatch InventoryBatch? @relation(fields: [inventoryBatchId], references: [id])
+
+  @@map("wastage_logs")
+}
+
+enum WastageReason {
+  BREAKAGE_PACKING
+  BREAKAGE_TRANSIT
+  QC_REJECTED
+  EXPIRED
+  CUSTOMER_RETURN
+  OTHER
 }
 
 // Order tracking - both one-time and subscription renewals

@@ -240,7 +240,7 @@ export default function DispatchPage() {
         {/* Print footer */}
         <div className="hidden print:block mt-8 border-t border-gray-300 pt-4">
           <p className="text-xs text-gray-500">
-            Modern Essentials — Dispatch Manifest — Printed{" "}
+            Modern Essentials &mdash; Dispatch Manifest &mdash; Printed{" "}
             {new Date().toLocaleDateString("en-IN")}
           </p>
         </div>

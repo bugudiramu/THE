@@ -1,5 +1,5 @@
 import { Header } from "@/components/header";
-import { PrismaClient } from "@modern-essentials/db";
+import { prisma } from "@/lib/db";
 import {
   ClipboardList,
   PackageCheck,
@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const prisma = new PrismaClient();
+export const dynamic = "force-dynamic";
 
 const statusCards = [
   {

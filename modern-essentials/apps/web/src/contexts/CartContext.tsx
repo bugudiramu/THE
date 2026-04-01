@@ -113,7 +113,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // If logged in, fetch from API
     if (isSignedIn && user) {
       try {
-        const token = await user.getToken();
+        const token = await (user as any).getToken();
         const res = await fetch(`${apiUrl}/cart`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -156,7 +156,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     
     if (isSignedIn && user) {
       try {
-        const token = await user.getToken();
+        const token = await (user as any).getToken();
         const res = await fetch(`${apiUrl}/cart/items`, {
           method: "POST",
           headers: {
@@ -225,7 +225,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateItem = async (itemId: string, quantity: number) => {
     if (isSignedIn && user) {
       try {
-        const token = await user.getToken();
+        const token = await (user as any).getToken();
         const res = await fetch(`${apiUrl}/cart/items/${itemId}`, {
           method: "PUT",
           headers: {
@@ -261,7 +261,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = async (itemId: string) => {
     if (isSignedIn && user) {
       try {
-        const token = await user.getToken();
+        const token = await (user as any).getToken();
         const res = await fetch(`${apiUrl}/cart/items/${itemId}`, {
           method: "DELETE",
           headers: {
@@ -291,7 +291,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = async () => {
     if (isSignedIn && user) {
       try {
-        const token = await user.getToken();
+        const token = await (user as any).getToken();
         await fetch(`${apiUrl}/cart`, {
           method: "DELETE",
           headers: {

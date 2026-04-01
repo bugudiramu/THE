@@ -47,7 +47,7 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const token = await user?.getToken();
+      const token = await (user as any).getToken();
       
       const [subsRes, ordersRes] = await Promise.all([
         fetch(`${apiUrl}/subscriptions`, {

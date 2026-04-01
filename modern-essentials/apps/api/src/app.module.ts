@@ -7,6 +7,7 @@ import { SubscriptionModule } from "./modules/subscription/subscription.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { WebhooksModule } from "./modules/webhooks/webhooks.module";
 import { OrdersModule } from "./modules/orders/orders.module";
+import { InventoryModule } from "./modules/inventory/inventory.module";
 import { BullModule } from "@nestjs/bullmq";
 import { JobsModule } from "./jobs/jobs.module";
 import { PrismaModule } from "./common/prisma.module";
@@ -25,6 +26,7 @@ import { PrismaModule } from "./common/prisma.module";
     NotificationsModule,
     WebhooksModule,
     OrdersModule,
+    InventoryModule,
     JobsModule,
     BullModule.forRoot({
       connection: {

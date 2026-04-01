@@ -18,7 +18,32 @@ async function main() {
   });
   console.log('Created test user:', user.phone);
 
-  // 2. Products Data
+  // 2. Farms Data
+  const farmsData = [
+    {
+      name: 'Happy Hens Farm',
+      location: 'Chittoor, AP',
+      contactName: 'Ramesh Kumar',
+      contactPhone: '9876543210',
+    },
+    {
+      name: 'Green Valley Organics',
+      location: 'Hosur, TN',
+      contactName: 'Latha Reddy',
+      contactPhone: '8765432109',
+    },
+  ];
+
+  const farms = [];
+  for (const farmData of farmsData) {
+    const farm = await prisma.farm.create({
+      data: farmData,
+    });
+    farms.push(farm);
+    console.log(`Seeded farm: ${farm.name}`);
+  }
+
+  // 3. Products Data
   const productsData = [
     {
       sku: 'EGG-REG-06',
@@ -78,7 +103,7 @@ async function main() {
     }
 
     // Create initial inventory
-    await prisma.inventoryBatch.create({
+    const batch = await prisma.inventoryBatch.create({
       data: {
         productId: product.id,
         qty: 100,
@@ -87,6 +112,19 @@ async function main() {
         status: 'AVAILABLE',
         qcStatus: 'PASS',
         locationId: 'WH-01-A1',
+      },
+    });
+
+    // Create farm batch link
+    await prisma.farmBatch.create({
+      data: {
+        farmId: farms[0].id,
+        productId: product.id,
+        inventoryBatchId: batch.id,
+        qtyCollected: 100,
+        collectedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        qcStatus: 'PASS',
+        temperatureOnArrival: 4.5,
       },
     });
 

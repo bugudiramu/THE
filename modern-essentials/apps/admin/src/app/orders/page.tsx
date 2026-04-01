@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { Header } from "@/components/header";
 import { StatusBadge } from "@/components/orders/status-badge";
 import { OrderFilterTabs } from "@/components/orders/order-filter-tabs";

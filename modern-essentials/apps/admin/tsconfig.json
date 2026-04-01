@@ -2,7 +2,6 @@
   "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./.next",
-    "rootDir": ".",
     "baseUrl": ".",
     "lib": ["ES2022", "dom", "dom.iterable"],
     "jsx": "preserve",
@@ -12,9 +11,12 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@modern-essentials/db": ["../../packages/db"],
+      "@modern-essentials/types": ["../../packages/types"],
+      "@modern-essentials/utils": ["../../packages/utils"],
+      "@modern-essentials/email": ["../../packages/email"],
+      "@modern-essentials/ui": ["../../packages/ui"]
     },
     "allowJs": true,
     "noEmit": true,
@@ -23,8 +25,8 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
     ".next/types/**/*.ts"
   ],
   "exclude": [
