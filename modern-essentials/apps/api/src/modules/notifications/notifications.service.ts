@@ -34,6 +34,24 @@ export class NotificationsService {
     await this.sendEmail(email, "welcome", { name: userName });
   }
 
+  async sendDunningRetry1(email: string, phone: string, name: string, updatePaymentUrl: string) {
+    await this.sendEmail(email, "dunning_retry1", { name, updatePaymentUrl });
+    await this.sendWhatsApp(phone, "dunning_retry1", { name, updatePaymentUrl });
+  }
+
+  async sendDunningRetry2(phone: string, name: string, updatePaymentUrl: string) {
+    await this.sendWhatsApp(phone, "dunning_retry2", { name, updatePaymentUrl });
+  }
+
+  async sendDunningRetry3(email: string, phone: string, name: string, updatePaymentUrl: string) {
+    await this.sendEmail(email, "dunning_retry3", { name, updatePaymentUrl });
+    await this.sendWhatsApp(phone, "dunning_retry3", { name, updatePaymentUrl });
+  }
+
+  async sendSubscriptionCancelled(email: string, name: string, reactivationUrl: string) {
+    await this.sendEmail(email, "subscription_cancelled", { name, reactivationUrl });
+  }
+
   async sendEmail(to: string, template: string, data: any) {
     await this.notificationsQueue.add("email", { to, template, data });
   }

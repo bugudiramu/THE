@@ -6,6 +6,7 @@ import { ExpressAdapter } from "@bull-board/express";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { SubscriptionRenewalProcessor } from "./subscription-renewal.job";
 import { NotificationDispatchProcessor } from "./notification-dispatch.job";
+import { DunningProcessor } from "./dunning.job";
 import { NotificationsModule } from "../modules/notifications/notifications.module";
 import { SubscriptionModule } from "../modules/subscription/subscription.module";
 
@@ -14,6 +15,7 @@ import { SubscriptionModule } from "../modules/subscription/subscription.module"
     BullModule.registerQueue(
       { name: "subscription-renewal" },
       { name: "notifications" },
+      { name: "dunning" },
     ),
     BullBoardModule.forRoot({
       route: "/admin/queues",
@@ -28,6 +30,10 @@ import { SubscriptionModule } from "../modules/subscription/subscription.module"
         name: "notifications",
         adapter: BullMQAdapter,
       },
+      {
+        name: "dunning",
+        adapter: BullMQAdapter,
+      },
     ),
     NotificationsModule,
     SubscriptionModule,
@@ -35,6 +41,7 @@ import { SubscriptionModule } from "../modules/subscription/subscription.module"
   providers: [
     SubscriptionRenewalProcessor,
     NotificationDispatchProcessor,
+    DunningProcessor,
   ],
 })
 export class JobsModule implements OnModuleInit {

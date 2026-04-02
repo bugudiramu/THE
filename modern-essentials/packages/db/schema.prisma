@@ -270,6 +270,7 @@ model Subscription {
   nextBillingAt      DateTime             @default(now()) // when next payment/order should be generated
   pauseUntil         DateTime?            @map("pause_until")
   dunningAttempt     Int                  @default(0) @map("dunning_attempt")
+  dunningStartedAt   DateTime?            @map("dunning_started_at")
   cancelReason       String?              @map("cancel_reason")
   cancelledAt        DateTime?
   createdAt          DateTime             @default(now())

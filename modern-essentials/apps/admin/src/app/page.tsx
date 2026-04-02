@@ -44,6 +44,13 @@ const statusCards = [
 
 const exceptionCards = [
   {
+    key: "DUNNING",
+    label: "In Dunning",
+    icon: AlertTriangle,
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+  },
+  {
     key: "PAYMENT_FAILED",
     label: "Payment Failed",
     icon: AlertTriangle,
@@ -60,44 +67,57 @@ const exceptionCards = [
 ];
 
 async function getDashboardData() {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
-  const counts = await prisma.order.groupBy({
-    by: ["status"],
-    where: {
-      placedAt: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
-    },
-    _count: {
-      status: true,
-    },
-  });
+    const [orderCounts, dunningCount] = await Promise.all([
+      prisma.order.groupBy({
+        by: ["status"],
+        where: {
+          placedAt: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+        },
+        _count: {
+          status: true,
+        },
+      }),
+      prisma.subscription.count({
+        where: {
+          status: "DUNNING",
+        },
+      }),
+    ]);
 
-  const statusMap: Record<string, number> = {
-    PENDING: 0,
-    PAID: 0,
-    PICKED: 0,
-    PACKED: 0,
-    DISPATCHED: 0,
-    DELIVERED: 0,
-    CANCELLED: 0,
-    PAYMENT_FAILED: 0,
-    REFUNDED: 0,
-  };
+    const statusMap: Record<string, number> = {
+      PENDING: 0,
+      PAID: 0,
+      PICKED: 0,
+      PACKED: 0,
+      DISPATCHED: 0,
+      DELIVERED: 0,
+      CANCELLED: 0,
+      PAYMENT_FAILED: 0,
+      REFUNDED: 0,
+      DUNNING: dunningCount,
+    };
 
-  counts.forEach((row) => {
-    statusMap[row.status] = row._count.status;
-  });
+    orderCounts.forEach((row) => {
+      statusMap[row.status] = row._count.status;
+    });
 
-  const total = Object.values(statusMap).reduce((sum, v) => sum + v, 0);
+    const total = Object.values(statusMap).reduce((sum, v) => sum + v, 0) - dunningCount;
 
-  return { counts: statusMap, total };
+    return { counts: statusMap, total };
+  } catch (error) {
+    console.error("Dashboard data fetch error:", error);
+    throw error;
+  }
 }
 
 export default async function DashboardPage() {
@@ -152,31 +172,37 @@ export default async function DashboardPage() {
         </div>
 
         {/* Exceptions */}
-        {(data.counts.PAYMENT_FAILED > 0 || data.counts.CANCELLED > 0) && (
-          <div>
-            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Exceptions
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {exceptionCards.map((card) =>
-                (data.counts[card.key] || 0) > 0 ? (
-                  <div
-                    key={card.key}
-                    className="rounded-xl border shadow-sm border-red-200 bg-red-50 p-5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-red-600">{card.label}</p>
-                      <card.icon className="h-4 w-4 text-red-500" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold text-red-600">
-                      {data.counts[card.key]}
-                    </p>
-                  </div>
-                ) : null,
-              )}
-            </div>
+        <div>
+          <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            Exceptions
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {exceptionCards.map((card) => (
+              <div
+                key={card.key}
+                className={`rounded-xl border shadow-sm p-5 ${
+                  card.key === "DUNNING" 
+                    ? "border-orange-200 bg-orange-50" 
+                    : "border-red-200 bg-red-50"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <p className={`text-sm font-medium ${
+                    card.key === "DUNNING" ? "text-orange-600" : "text-red-600"
+                  }`}>{card.label}</p>
+                  <card.icon className={`h-4 w-4 ${
+                    card.key === "DUNNING" ? "text-orange-500" : "text-red-500"
+                  }`} />
+                </div>
+                <p className={`mt-3 text-3xl font-bold ${
+                  card.key === "DUNNING" ? "text-orange-600" : "text-red-600"
+                }`}>
+                  {data.counts[card.key] || 0}
+                </p>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Quick links */}
         <div>

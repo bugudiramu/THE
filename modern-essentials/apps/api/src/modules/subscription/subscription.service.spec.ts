@@ -3,6 +3,8 @@ import { SubscriptionService, SubscriptionStatus } from "./subscription.service"
 import { PrismaService } from "../../common/prisma.service";
 import { BadRequestException } from "@nestjs/common";
 import Razorpay from "razorpay";
+import { NotificationsService } from "../notifications/notifications.service";
+import { getQueueToken } from "@nestjs/bullmq";
 
 jest.mock("razorpay");
 
@@ -26,11 +28,24 @@ describe("SubscriptionService FSM Transitions", () => {
     },
   };
 
+  const mockNotificationsService = {
+    sendDunningRetry1: jest.fn(),
+    sendDunningRetry2: jest.fn(),
+    sendDunningRetry3: jest.fn(),
+    sendSubscriptionCancelled: jest.fn(),
+  };
+
+  const mockDunningQueue = {
+    add: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SubscriptionService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: getQueueToken("dunning"), useValue: mockDunningQueue },
       ],
     }).compile();
 
@@ -53,6 +68,7 @@ describe("SubscriptionService FSM Transitions", () => {
     productId: "prod_1",
     razorpaySubscriptionId: "rzp_sub_1",
     product: { id: "prod_1", subPrice: 10000 },
+    user: { email: "test@example.com", phone: "1234567890" },
     quantity: 1,
   };
 
@@ -112,7 +128,11 @@ describe("SubscriptionService FSM Transitions", () => {
 
       expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
         where: { id: "sub_1" },
-        data: { status: SubscriptionStatus.DUNNING, dunningAttempt: { increment: 1 } },
+        data: expect.objectContaining({
+          status: SubscriptionStatus.DUNNING,
+          dunningAttempt: 1,
+          dunningStartedAt: expect.any(Date),
+        }),
       });
     });
 

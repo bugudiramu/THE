@@ -45,6 +45,15 @@ export class SubscriptionController {
     return this.subscriptionService.getSubscriptionById(userId, id);
   }
 
+  @Post(":id/reactivate")
+  async reactivateSubscription(
+    @Req() req: any,
+    @Param("id") id: string,
+  ) {
+    const userId = req.user.id;
+    return this.subscriptionService.reactivate(id, userId);
+  }
+
   // Support old endpoints for backward compatibility if needed, or just follow the plan
   @Post()
   async createSubscriptionLegacy(
