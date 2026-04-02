@@ -9,6 +9,16 @@ export type SubscriptionStatus =
   | 'CANCELLED'
   | 'EXPIRED';
 
+export const VALID_TRANSITIONS: Record<SubscriptionStatus, SubscriptionStatus[]> = {
+  PENDING: ['ACTIVE'],
+  ACTIVE: ['RENEWAL_DUE', 'PAUSED', 'CANCELLED'],
+  RENEWAL_DUE: ['ACTIVE', 'DUNNING'],
+  DUNNING: ['ACTIVE', 'CANCELLED'],
+  PAUSED: ['ACTIVE'],
+  CANCELLED: [],
+  EXPIRED: [],
+};
+
 export interface ISubscriptionPlan {
   id: string;
   productId: string;
@@ -28,6 +38,9 @@ export interface ISubscription {
   frequency: SubscriptionFrequency;
   status: SubscriptionStatus;
   nextBillingAt: Date;
+  pauseUntil?: Date;
+  dunningAttempt: number;
+  cancelReason?: string;
   cancelledAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -37,6 +50,11 @@ export interface CreateSubscriptionPayload {
   productId: string;
   quantity: number;
   frequency: SubscriptionFrequency;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
 }
 
 export interface SubscriptionResponse {

@@ -5,15 +5,16 @@ import {
   CreateSubscriptionDto,
   SubscriptionResponseDto,
 } from "./subscription.dto";
+import { OrderType } from "@modern-essentials/db";
 
 // Enums from Prisma client are preferred, but using strings for consistency with Razorpay mapping
-enum SubscriptionFrequency {
+export enum SubscriptionFrequency {
   WEEKLY = "WEEKLY",
   FORTNIGHTLY = "FORTNIGHTLY",
   MONTHLY = "MONTHLY",
 }
 
-enum SubscriptionStatus {
+export enum SubscriptionStatus {
   PENDING = "PENDING",
   ACTIVE = "ACTIVE",
   PAUSED = "PAUSED",
@@ -23,7 +24,7 @@ enum SubscriptionStatus {
   EXPIRED = "EXPIRED",
 }
 
-enum SubscriptionEventType {
+export enum SubscriptionEventType {
   CREATED = "CREATED",
   ACTIVATED = "ACTIVATED",
   UPDATED = "UPDATED",
@@ -31,7 +32,19 @@ enum SubscriptionEventType {
   RESUMED = "RESUMED",
   CANCELLED = "CANCELLED",
   EXPIRED = "EXPIRED",
+  PAYMENT_FAILED = "PAYMENT_FAILED",
+  RENEWED = "RENEWED",
 }
+
+const VALID_TRANSITIONS: Record<SubscriptionStatus, SubscriptionStatus[]> = {
+  [SubscriptionStatus.PENDING]: [SubscriptionStatus.ACTIVE],
+  [SubscriptionStatus.ACTIVE]: [SubscriptionStatus.RENEWAL_DUE, SubscriptionStatus.PAUSED, SubscriptionStatus.CANCELLED],
+  [SubscriptionStatus.RENEWAL_DUE]: [SubscriptionStatus.ACTIVE, SubscriptionStatus.DUNNING],
+  [SubscriptionStatus.DUNNING]: [SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELLED],
+  [SubscriptionStatus.PAUSED]: [SubscriptionStatus.ACTIVE],
+  [SubscriptionStatus.CANCELLED]: [],
+  [SubscriptionStatus.EXPIRED]: [],
+};
 
 @Injectable()
 export class SubscriptionService {
@@ -149,35 +162,163 @@ export class SubscriptionService {
   async transitionStatus(
     subscriptionId: string,
     newStatus: SubscriptionStatus,
-    description?: string,
     metadata?: any,
   ) {
-    const subscription = await this.prisma.subscription.findUnique({
+    const sub = await this.prisma.subscription.findUnique({
       where: { id: subscriptionId },
+      include: { product: true },
     });
 
-    if (!subscription) {
+    if (!sub) {
       throw new NotFoundException("Subscription not found");
     }
 
-    const updatedSubscription = await this.prisma.subscription.update({
+    const currentStatus = sub.status as unknown as SubscriptionStatus;
+
+    if (currentStatus === newStatus) {
+      this.logger.log(`Subscription ${subscriptionId} already in status ${newStatus}. Skipping.`);
+      return sub;
+    }
+
+    // Validate transition
+    if (!VALID_TRANSITIONS[currentStatus]?.includes(newStatus)) {
+      throw new BadRequestException(
+        `Illegal transition from ${currentStatus} to ${newStatus}`,
+      );
+    }
+
+    this.logger.log(`Transitioning sub ${subscriptionId} from ${currentStatus} to ${newStatus}`);
+
+    const updateData: any = { status: newStatus as any };
+
+    // Execute side effects
+    switch (newStatus) {
+      case SubscriptionStatus.ACTIVE:
+        if (currentStatus === SubscriptionStatus.PENDING) {
+          // Transition 1: PENDING -> ACTIVE (on subscription.activated)
+          updateData.nextBillingAt = this.calculateNextBillingDate(sub.frequency as any);
+          await this.createFirstOrder(sub);
+          // Send welcome WhatsApp (placeholder)
+        } else if (currentStatus === SubscriptionStatus.RENEWAL_DUE) {
+          // Transition 3: RENEWAL_DUE -> ACTIVE (on subscription.charged)
+          updateData.nextBillingAt = this.calculateNextBillingDate(sub.frequency as any);
+          updateData.dunningAttempt = 0;
+          await this.createRenewalOrder(sub);
+        } else if (currentStatus === SubscriptionStatus.DUNNING) {
+          // Transition 5: DUNNING -> ACTIVE (retry success)
+          updateData.nextBillingAt = this.calculateNextBillingDate(sub.frequency as any);
+          updateData.dunningAttempt = 0;
+          await this.createRenewalOrder(sub);
+        } else if (currentStatus === SubscriptionStatus.PAUSED) {
+          // Transition 8: PAUSED -> ACTIVE
+          updateData.pauseUntil = null;
+        }
+        break;
+
+      case SubscriptionStatus.RENEWAL_DUE:
+        // Transition 2: ACTIVE -> RENEWAL_DUE (triggered by renewal job)
+        // Razorpay auto-charge will follow, handled by webhook
+        break;
+
+      case SubscriptionStatus.DUNNING:
+        // Transition 4: RENEWAL_DUE -> DUNNING (on subscription.payment_failed)
+        updateData.dunningAttempt = { increment: 1 };
+        break;
+
+      case SubscriptionStatus.CANCELLED:
+        // Transition 6: DUNNING -> CANCELLED or Transition 9: ACTIVE -> CANCELLED
+        updateData.cancelledAt = new Date();
+        if (metadata?.reason) {
+          updateData.cancelReason = metadata.reason;
+        }
+        // Cancel Razorpay subscription if not already cancelled
+        try {
+          await this.razorpay.subscriptions.cancel(sub.razorpaySubscriptionId!);
+        } catch (e: any) {
+          this.logger.warn(`Razorpay cancel failed (might already be cancelled): ${e.message}`);
+        }
+        break;
+
+      case SubscriptionStatus.PAUSED:
+        // Transition 7: ACTIVE -> PAUSED
+        if (metadata?.pauseUntil) {
+          updateData.pauseUntil = new Date(metadata.pauseUntil);
+        }
+        break;
+    }
+
+    const updatedSub = await this.prisma.subscription.update({
       where: { id: subscriptionId },
-      data: {
-        status: newStatus as any,
-        ...(newStatus === SubscriptionStatus.ACTIVE ? { nextBillingAt: this.calculateNextBillingDate(subscription.frequency as any) } : {}),
-      },
+      data: updateData,
     });
 
     await this.prisma.subscriptionEvent.create({
       data: {
         subscriptionId,
         eventType: this.mapStatusToEventType(newStatus) as any,
-        description: description || `Status transitioned to ${newStatus}`,
+        description: `Status transitioned from ${currentStatus} to ${newStatus}`,
         metadata: metadata || {},
       },
     });
 
-    return updatedSubscription;
+    return updatedSub;
+  }
+
+  private async createFirstOrder(sub: any) {
+    return this.prisma.order.create({
+      data: {
+        userId: sub.userId,
+        subscriptionId: sub.id,
+        type: OrderType.SUBSCRIPTION_RENEWAL,
+        status: "PAID",
+        total: sub.product.subPrice * sub.quantity,
+        addressLine1: sub.addressLine1,
+        addressLine2: sub.addressLine2,
+        city: sub.city,
+        state: sub.state,
+        postalCode: sub.postalCode,
+        items: {
+          create: {
+            productId: sub.productId,
+            qty: sub.quantity,
+            price: sub.product.subPrice,
+            total: sub.product.subPrice * sub.quantity,
+          },
+        },
+      },
+    });
+  }
+
+  async createRenewalOrder(sub: any) {
+    // Refresh product price to current price (per §5.2)
+    const product = await this.prisma.product.findUnique({
+      where: { id: sub.productId },
+    });
+
+    if (!product) throw new Error("Product not found for renewal order");
+
+    return this.prisma.order.create({
+      data: {
+        userId: sub.userId,
+        subscriptionId: sub.id,
+        type: OrderType.SUBSCRIPTION_RENEWAL,
+        status: "PAID",
+        total: product.subPrice * sub.quantity,
+        addressLine1: sub.addressLine1,
+        addressLine2: sub.addressLine2,
+        city: sub.city,
+        state: sub.state,
+        postalCode: sub.postalCode,
+        items: {
+          create: {
+            productId: sub.productId,
+            qty: sub.quantity,
+            price: product.subPrice,
+            total: product.subPrice * sub.quantity,
+          },
+        },
+      },
+    });
   }
 
   private async getOrCreateRazorpayPlan(productId: string, amount: number, frequency: SubscriptionFrequency) {
@@ -245,6 +386,7 @@ export class SubscriptionService {
       case SubscriptionStatus.PAUSED: return SubscriptionEventType.PAUSED;
       case SubscriptionStatus.CANCELLED: return SubscriptionEventType.CANCELLED;
       case SubscriptionStatus.EXPIRED: return SubscriptionEventType.EXPIRED;
+      case SubscriptionStatus.DUNNING: return SubscriptionEventType.PAYMENT_FAILED;
       default: return SubscriptionEventType.UPDATED;
     }
   }

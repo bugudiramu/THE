@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
-import { SubscriptionService } from "../subscription/subscription.service";
+import { SubscriptionService, SubscriptionStatus } from "../subscription/subscription.service";
 
 @Injectable()
 export class WebhooksService {
@@ -58,38 +58,49 @@ export class WebhooksService {
             case "subscription.activated":
               await this.subscriptionService.transitionStatus(
                 subscription.id,
-                "ACTIVE" as any,
-                "Subscription activated via Razorpay webhook",
+                SubscriptionStatus.ACTIVE,
                 { razorpayEventId: eventId }
               );
-              
-              // Create first delivery order (Weekly 7 requirement)
-              await this.createFirstSubscriptionOrder(subscription.id);
               break;
             case "subscription.charged":
-              // For renewals, the status stays ACTIVE, but we need a new order
-              // (Note: Razorpay charges immediately on activation, 
-              // which also triggers subscription.charged after subscription.activated)
-              // If we already created an order for this charge, skip it.
-              await this.handleSubscriptionCharged(subscription.id, payload);
+              // Transition RENEWAL_DUE or DUNNING to ACTIVE
+              // This also handles renewal order generation inside transitionStatus
+              await this.subscriptionService.transitionStatus(
+                subscription.id,
+                SubscriptionStatus.ACTIVE,
+                { 
+                  razorpayEventId: eventId,
+                  paymentId: payload.payload?.payment?.entity?.id,
+                  razorpayPayload: payload.payload
+                }
+              );
               break;
             case "subscription.payment_failed":
-              await this.prisma.subscription.update({
-                where: { id: subscription.id },
-                data: { status: "DUNNING" },
-              });
+              await this.subscriptionService.transitionStatus(
+                subscription.id,
+                SubscriptionStatus.DUNNING,
+                { 
+                  razorpayEventId: eventId,
+                  error: payload.payload?.payment?.entity?.error_description 
+                }
+              );
               break;
             case "subscription.cancelled":
-              await this.prisma.subscription.update({
-                where: { id: subscription.id },
-                data: { status: "CANCELLED" },
-              });
+              await this.subscriptionService.transitionStatus(
+                subscription.id,
+                SubscriptionStatus.CANCELLED,
+                { 
+                  razorpayEventId: eventId,
+                  reason: payload.payload?.subscription?.entity?.notes?.cancel_reason || "Cancelled via Razorpay"
+                }
+              );
               break;
             case "subscription.paused":
-              await this.prisma.subscription.update({
-                where: { id: subscription.id },
-                data: { status: "PAUSED" },
-              });
+              await this.subscriptionService.transitionStatus(
+                subscription.id,
+                SubscriptionStatus.PAUSED,
+                { razorpayEventId: eventId }
+              );
               break;
           }
         }
@@ -106,17 +117,6 @@ export class WebhooksService {
             data: { status: "PAID" },
           });
           this.logger.log(`Order ${order.id} marked as PAID via webhook`);
-        } else {
-          // Fallback to updateMany if findUnique fails (e.g. if @unique constraint was just added)
-          const result = await this.prisma.order.updateMany({
-            where: { razorpayOrderId: razorpayOrderId as string },
-            data: { status: "PAID" },
-          });
-          if (result.count > 0) {
-            this.logger.log(`Marked ${result.count} order(s) as PAID via updateMany fallback`);
-          } else {
-            this.logger.warn(`No order found for razorpayOrderId: ${razorpayOrderId}`);
-          }
         }
       }
 
@@ -132,71 +132,9 @@ export class WebhooksService {
       });
     } catch (error) {
       this.logger.error(`Error processing webhook ${eventId}`, error);
+      // Even if it fails, we don't want to re-process it if it was a business logic error
+      // But for now let's allow retries on error
       throw error; 
     }
-  }
-
-  private async createFirstSubscriptionOrder(subscriptionId: string) {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { id: subscriptionId },
-      include: { product: true },
-    });
-
-    if (!subscription) return;
-
-    // Check if an order already exists for this subscription to avoid duplicates
-    const existingOrder = await this.prisma.order.findFirst({
-      where: { subscriptionId: subscription.id },
-    });
-
-    if (existingOrder) return;
-
-    await this.prisma.order.create({
-      data: {
-        userId: subscription.userId,
-        subscriptionId: subscription.id,
-        status: "PAID",
-        type: "SUBSCRIPTION_RENEWAL",
-        total: subscription.product.subPrice * subscription.quantity,
-        addressLine1: subscription.addressLine1,
-        addressLine2: subscription.addressLine2,
-        city: subscription.city,
-        state: subscription.state,
-        postalCode: subscription.postalCode,
-        placedAt: new Date(),
-        items: {
-          create: {
-            productId: subscription.productId,
-            qty: subscription.quantity,
-            price: subscription.product.subPrice,
-            total: subscription.product.subPrice * subscription.quantity,
-          },
-        },
-      },
-    });
-
-    this.logger.log(`Created first delivery order for subscription: ${subscriptionId}`);
-  }
-
-  private async handleSubscriptionCharged(subscriptionId: string, payload: any) {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { id: subscriptionId },
-      include: { product: true },
-    });
-
-    if (!subscription) return;
-
-    const paymentId = payload.payload?.payment?.entity?.id;
-    
-    // In a real app, we should check if an order for this paymentId already exists
-    // For now, we'll just log it or create a new order if it's not the very first charge (which is handled by activated)
-    
-    // Transition status to ACTIVE (if it was PAUSED or RENEWAL_DUE)
-    await this.subscriptionService.transitionStatus(
-      subscriptionId,
-      "ACTIVE" as any,
-      `Subscription charged successfully. Payment ID: ${paymentId}`,
-      { paymentId }
-    );
   }
 }
