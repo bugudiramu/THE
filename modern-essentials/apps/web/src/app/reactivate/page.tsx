@@ -70,7 +70,7 @@ function ReactivateContent() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push("/subscriptions");
+        router.push("/account/subscriptions");
       }, 3000);
     } catch (err: any) {
       setError(err.message);

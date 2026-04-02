@@ -7,3 +7,4 @@ export * from "./components/ui/label";
 export * from "./components/ui/radio-group";
 export * from "./components/ui/select";
 export * from "./components/ui/separator";
+export * from "./components/ui/dialog";

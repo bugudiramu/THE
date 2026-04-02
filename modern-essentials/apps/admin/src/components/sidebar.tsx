@@ -13,6 +13,7 @@ import {
   PlusCircle,
   FileCheck,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -42,6 +43,11 @@ const navItems = [
     label: "Inventory",
     href: "/inventory",
     icon: Warehouse,
+  },
+  {
+    label: "Subscriptions",
+    href: "/subscriptions",
+    icon: RefreshCw,
   },
   {
     label: "GRN Intake",

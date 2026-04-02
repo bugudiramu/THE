@@ -38,12 +38,25 @@ export interface ISubscription {
   frequency: SubscriptionFrequency;
   status: SubscriptionStatus;
   nextBillingAt: Date;
+  nextDeliveryAt: Date;
   pauseUntil?: Date;
+  skipCount: number;
   dunningAttempt: number;
   cancelReason?: string;
   cancelledAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ISubscriptionLog {
+  id: string;
+  subscriptionId: string;
+  action: string;
+  oldValue?: string;
+  newValue?: string;
+  reason?: string;
+  performedBy: string;
+  createdAt: Date;
 }
 
 export interface CreateSubscriptionPayload {

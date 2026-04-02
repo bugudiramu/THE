@@ -3,6 +3,7 @@
 import { useUser, useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 
 interface Subscription {
@@ -134,22 +135,29 @@ export default function DashboardPage() {
                 ) : (
                   <div className="space-y-4">
                     {subscriptions.map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between p-4 border border-gray-50 rounded-xl hover:bg-gray-50 transition-colors">
+                      <Link 
+                        key={sub.id} 
+                        href={`/account/subscriptions/${sub.id}`}
+                        className="flex items-center justify-between p-4 border border-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                      >
                         <div>
                           <h3 className="font-bold text-gray-900">{sub.product.name}</h3>
                           <p className="text-sm text-gray-500 capitalize">
                             {sub.quantity} eggs • {sub.frequency.toLowerCase()}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold ${
-                            sub.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                          }`}>
-                            {sub.status}
-                          </span>
-                          <p className="text-xs text-gray-400 mt-1">Next: {formatDate(sub.nextBillingAt)}</p>
+                        <div className="text-right flex items-center gap-3">
+                          <div className="text-right">
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold ${
+                              sub.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                            }`}>
+                              {sub.status}
+                            </span>
+                            <p className="text-xs text-gray-400 mt-1">Next: {formatDate(sub.nextBillingAt)}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}

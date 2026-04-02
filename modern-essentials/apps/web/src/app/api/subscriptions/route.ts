@@ -1,53 +1,31 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-export async function GET() {
-  // Mock subscription data for testing
-  const mockSubscriptions = [
-    {
-      id: "sub_1",
-      productId: "cmn1hvz3700007kz4vbi8cc9h",
-      productName: "Fresh Regular Eggs",
-      quantity: 6,
-      frequency: "WEEKLY",
-      status: "ACTIVE",
-      nextBillingAt: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      price: 10800, // Rs. 108.00 with subscription savings
-      savings: 10,
-      product: {
-        id: "cmn1hvz3700007kz4vbi8cc9h",
-        name: "Fresh Regular Eggs",
-        sku: "EGG001",
-        price: 12000,
-        subPrice: 10800,
-        category: "REGULAR_EGGS",
-      },
-    },
-    {
-      id: "sub_2",
-      productId: "cmn1hvz3t00027kz4psycn7gi",
-      productName: "Organic Brown Eggs",
-      quantity: 12,
-      frequency: "FORTNIGHTLY",
-      status: "ACTIVE",
-      nextBillingAt: new Date(
-        Date.now() + 14 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      price: 26400, // Rs. 264.00 with subscription savings
-      savings: 12,
-      product: {
-        id: "cmn1hvz3t00027kz4psycn7gi",
-        name: "Organic Brown Eggs",
-        sku: "EGG002",
-        price: 15000,
-        subPrice: 13200,
-        category: "BROWN_EGGS",
-      },
-    },
-  ];
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 
-  return NextResponse.json({
-    subscriptions: mockSubscriptions,
-  });
+export async function GET() {
+  const { getToken } = auth();
+  const token = await getToken();
+
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/subscriptions/mine`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return NextResponse.json({ error: "Failed to fetch from backend" }, { status: response.status });
+    }
+
+    const subscriptions = await response.json();
+    return NextResponse.json({ subscriptions });
+  } catch (error) {
+    console.error("Subscription Proxy Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }

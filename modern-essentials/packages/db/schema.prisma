@@ -267,8 +267,10 @@ model Subscription {
   city               String?
   state              String?
   postalCode         String?              @map("postal_code")
-  nextBillingAt      DateTime             @default(now()) // when next payment/order should be generated
+  nextBillingAt      DateTime             @default(now()) // when next payment should be generated
+  nextDeliveryAt     DateTime             @default(now()) @map("next_delivery_at") // when next delivery should happen
   pauseUntil         DateTime?            @map("pause_until")
+  skipCount          Int                  @default(0) @map("skip_count")
   dunningAttempt     Int                  @default(0) @map("dunning_attempt")
   dunningStartedAt   DateTime?            @map("dunning_started_at")
   cancelReason       String?              @map("cancel_reason")
@@ -282,10 +284,27 @@ model Subscription {
   plan       SubscriptionPlan? @relation(fields: [planId], references: [id])
   items      SubscriptionItem[]
   events      SubscriptionEvent[]
+  logs       SubscriptionLog[]
   orders     Order[]
 
   @@index([userId, status])
   @@map("subscriptions")
+}
+
+model SubscriptionLog {
+  id             String   @id @default(cuid())
+  subscriptionId String   @map("subscription_id")
+  action         String
+  oldValue       String?  @map("old_value")
+  newValue       String?  @map("new_value")
+  reason         String?
+  performedBy    String   @map("performed_by") // user ID or "system"
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("subscription_logs")
 }
 
 model SubscriptionPlan {

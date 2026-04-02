@@ -2,8 +2,15 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from "@nes
 import Razorpay from "razorpay";
 import { PrismaService } from "../../common/prisma.service";
 import {
+  AdminOverrideDto,
+  CancelSubscriptionDto,
+  ChangeAddressDto,
+  ChangeFrequencyDto,
+  ChangeQuantityDto,
   CreateSubscriptionDto,
+  PauseSubscriptionDto,
   SubscriptionResponseDto,
+  SwapProductDto,
 } from "./subscription.dto";
 import { OrderType } from "@modern-essentials/db";
 import { InjectQueue } from "@nestjs/bullmq";
@@ -596,9 +603,15 @@ export class SubscriptionService {
       frequency: subscription.frequency,
       status: subscription.status,
       nextBillingAt: subscription.nextBillingAt,
+      nextDeliveryAt: subscription.nextDeliveryAt,
       price: product.subPrice * subscription.quantity,
       savings: Math.round(((product.price - product.subPrice) / product.price) * 100),
       razorpaySubscriptionId: subscription.razorpaySubscriptionId,
+      addressLine1: subscription.addressLine1,
+      addressLine2: subscription.addressLine2,
+      city: subscription.city,
+      state: subscription.state,
+      postalCode: subscription.postalCode,
       product: {
         id: product.id,
         name: product.name,
@@ -608,5 +621,325 @@ export class SubscriptionService {
         category: product.category,
       },
     };
+  }
+
+  private async logChange(
+    subscriptionId: string,
+    action: string,
+    oldValue: string | null,
+    newValue: string | null,
+    performedBy: string,
+    reason?: string,
+  ) {
+    await this.prisma.subscriptionLog.create({
+      data: {
+        subscriptionId,
+        action,
+        oldValue,
+        newValue,
+        performedBy,
+        reason,
+      },
+    });
+  }
+
+  async pauseSubscription(subId: string, userId: string, pauseDto: PauseSubscriptionDto) {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id: subId, userId },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+    if (sub.status !== (SubscriptionStatus.ACTIVE as any)) {
+      throw new BadRequestException("Only active subscriptions can be paused");
+    }
+
+    const pauseUntil = new Date();
+    pauseUntil.setDate(pauseUntil.getDate() + pauseDto.durationWeeks * 7);
+
+    await this.transitionStatus(subId, SubscriptionStatus.PAUSED, {
+      pauseUntil,
+      reason: pauseDto.reason,
+    });
+
+    await this.logChange(
+      subId,
+      "PAUSE",
+      sub.status,
+      SubscriptionStatus.PAUSED,
+      userId,
+      pauseDto.reason,
+    );
+
+    return this.getSubscriptionById(userId, subId);
+  }
+
+  async resumeSubscription(subId: string, userId: string) {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id: subId, userId },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+    if (sub.status !== (SubscriptionStatus.PAUSED as any)) {
+      throw new BadRequestException("Only paused subscriptions can be resumed");
+    }
+
+    await this.transitionStatus(subId, SubscriptionStatus.ACTIVE);
+
+    await this.logChange(subId, "RESUME", sub.status, SubscriptionStatus.ACTIVE, userId);
+
+    return this.getSubscriptionById(userId, subId);
+  }
+
+  async skipNextDelivery(subId: string, userId: string) {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id: subId, userId },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+    if (sub.status !== (SubscriptionStatus.ACTIVE as any)) {
+      throw new BadRequestException("Only active subscriptions can skip delivery");
+    }
+
+    const oldDate = sub.nextDeliveryAt;
+    const newDate = this.calculateNextBillingDate(sub.frequency as any);
+
+    await this.prisma.subscription.update({
+      where: { id: subId },
+      data: {
+        nextDeliveryAt: newDate,
+        skipCount: { increment: 1 },
+      },
+    });
+
+    await this.logChange(
+      subId,
+      "SKIP_DELIVERY",
+      oldDate.toISOString(),
+      newDate.toISOString(),
+      userId,
+    );
+
+    return this.getSubscriptionById(userId, subId);
+  }
+
+  async changeFrequency(subId: string, userId: string, freqDto: ChangeFrequencyDto) {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id: subId, userId },
+      include: { product: true },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+
+    const oldFreq = sub.frequency;
+    const newFreq = freqDto.frequency as SubscriptionFrequency;
+
+    await this.prisma.subscription.update({
+      where: { id: subId },
+      data: {
+        frequency: newFreq as any,
+        nextBillingAt: this.calculateNextBillingDate(newFreq),
+      },
+    });
+
+    await this.logChange(subId, "CHANGE_FREQUENCY", oldFreq as string, newFreq, userId);
+
+    return this.getSubscriptionById(userId, subId);
+  }
+
+  async changeQuantity(subId: string, userId: string, qtyDto: ChangeQuantityDto) {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id: subId, userId },
+      include: { product: true },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+
+    const oldQty = sub.quantity;
+    const newQty = qtyDto.quantity;
+
+    await this.prisma.subscription.update({
+      where: { id: subId },
+      data: { quantity: newQty },
+    });
+
+    await this.logChange(
+      subId,
+      "CHANGE_QUANTITY",
+      oldQty.toString(),
+      newQty.toString(),
+      userId,
+    );
+
+    return this.getSubscriptionById(userId, subId);
+  }
+
+  async changeAddress(subId: string, userId: string, addrDto: ChangeAddressDto) {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id: subId, userId },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+
+    await this.prisma.subscription.update({
+      where: { id: subId },
+      data: {
+        addressLine1: addrDto.addressLine1,
+        addressLine2: addrDto.addressLine2,
+        city: addrDto.city,
+        state: addrDto.state,
+        postalCode: addrDto.postalCode,
+      },
+    });
+
+    await this.logChange(subId, "CHANGE_ADDRESS", null, addrDto.postalCode, userId);
+
+    return this.getSubscriptionById(userId, subId);
+  }
+
+  async swapProduct(subId: string, userId: string, swapDto: SwapProductDto) {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id: subId, userId },
+      include: { product: true },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+
+    const newProduct = await this.prisma.product.findUnique({
+      where: { id: swapDto.newProductId },
+    });
+
+    if (!newProduct) throw new NotFoundException("New product not found");
+
+    const oldProductId = sub.productId;
+    const newProductId = swapDto.newProductId;
+
+    await this.prisma.subscription.update({
+      where: { id: subId },
+      data: { productId: newProductId },
+    });
+
+    await this.logChange(subId, "SWAP_PRODUCT", oldProductId, newProductId, userId);
+
+    return this.getSubscriptionById(userId, subId);
+  }
+
+  async cancelSubscription(subId: string, userId: string, cancelDto: CancelSubscriptionDto) {
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id: subId, userId },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+    if (sub.status === (SubscriptionStatus.CANCELLED as any)) {
+      throw new BadRequestException("Subscription is already cancelled");
+    }
+
+    await this.transitionStatus(subId, SubscriptionStatus.CANCELLED, {
+      reason: cancelDto.reason,
+      notes: cancelDto.notes,
+    });
+
+    await this.logChange(
+      subId,
+      "CANCEL",
+      sub.status as string,
+      SubscriptionStatus.CANCELLED,
+      userId,
+      cancelDto.reason,
+    );
+
+    return this.getSubscriptionById(userId, subId);
+  }
+
+  async findAllSubscriptions(page = 1, limit = 10, status?: string, userId?: string) {
+    const where: any = {};
+    if (status) where.status = status;
+    if (userId) where.userId = userId;
+
+    const [items, total] = await Promise.all([
+      this.prisma.subscription.findMany({
+        where,
+        include: { product: true, user: true },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.subscription.count({ where }),
+    ]);
+
+    return {
+      items: items.map((sub) => ({
+        ...this.mapSubscriptionToResponse(sub, sub.product),
+        user: {
+          id: sub.user.id,
+          phone: sub.user.phone,
+          email: sub.user.email,
+        },
+      })),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async adminOverride(subId: string, overrideDto: AdminOverrideDto, adminId: string) {
+    const sub = await this.prisma.subscription.findUnique({
+      where: { id: subId },
+    });
+
+    if (!sub) throw new NotFoundException("Subscription not found");
+
+    const { action, reason, ...data } = overrideDto;
+
+    switch (action) {
+      case "PAUSE":
+        if (data.pauseUntil) {
+          await this.transitionStatus(subId, SubscriptionStatus.PAUSED, {
+            pauseUntil: data.pauseUntil,
+            reason,
+          });
+        }
+        break;
+      case "RESUME":
+        await this.transitionStatus(subId, SubscriptionStatus.ACTIVE);
+        break;
+      case "CANCEL":
+        await this.transitionStatus(subId, SubscriptionStatus.CANCELLED, { reason });
+        break;
+      case "MODIFY_QTY":
+        if (data.quantity) {
+          await this.prisma.subscription.update({
+            where: { id: subId },
+            data: { quantity: data.quantity },
+          });
+        }
+        break;
+      case "MODIFY_FREQ":
+        if (data.frequency) {
+          await this.prisma.subscription.update({
+            where: { id: subId },
+            data: {
+              frequency: data.frequency as any,
+              nextBillingAt: this.calculateNextBillingDate(data.frequency as any),
+            },
+          });
+        }
+        break;
+      case "EXTEND":
+        // Extend next billing date
+        if (data.pauseUntil) {
+           await this.prisma.subscription.update({
+            where: { id: subId },
+            data: { nextBillingAt: new Date(data.pauseUntil) },
+          });
+        }
+        break;
+    }
+
+    await this.logChange(subId, `ADMIN_OVERRIDE_${action}`, null, null, `admin:${adminId}`, reason);
+
+    return this.prisma.subscription.findUnique({
+      where: { id: subId },
+      include: { product: true },
+    });
   }
 }
