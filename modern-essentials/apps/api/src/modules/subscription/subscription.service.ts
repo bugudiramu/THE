@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import Razorpay from "razorpay";
 import { PrismaService } from "../../common/prisma.service";
 import {
   CreateSubscriptionDto,
   SubscriptionResponseDto,
-  UpdateSubscriptionDto,
 } from "./subscription.dto";
 
-// Define enums since they're not in Prisma client
+// Enums from Prisma client are preferred, but using strings for consistency with Razorpay mapping
 enum SubscriptionFrequency {
   WEEKLY = "WEEKLY",
   FORTNIGHTLY = "FORTNIGHTLY",
@@ -23,266 +23,233 @@ enum SubscriptionStatus {
   EXPIRED = "EXPIRED",
 }
 
-// Define SubscriptionEventType enum since it's not in Prisma
 enum SubscriptionEventType {
   CREATED = "CREATED",
+  ACTIVATED = "ACTIVATED",
   UPDATED = "UPDATED",
   PAUSED = "PAUSED",
   RESUMED = "RESUMED",
   CANCELLED = "CANCELLED",
-  PAYMENT_FAILED = "PAYMENT_FAILED",
+  EXPIRED = "EXPIRED",
 }
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private prisma: PrismaService) {}
+  private razorpay: Razorpay;
+  private readonly logger = new Logger(SubscriptionService.name);
+
+  constructor(private prisma: PrismaService) {
+    this.razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+  }
 
   async createSubscription(
     userId: string,
-    createSubscriptionDto: CreateSubscriptionDto,
-  ) {
-    // Calculate subscription price with savings
+    createDto: CreateSubscriptionDto,
+  ): Promise<SubscriptionResponseDto> {
     const product = await this.prisma.product.findUnique({
-      where: { id: createSubscriptionDto.productId },
+      where: { id: createDto.productId },
     });
 
     if (!product) {
-      throw new Error("Product not found");
+      throw new NotFoundException("Product not found");
     }
 
-    const subscription = await this.prisma.subscription.create({
-      data: {
-        userId,
-        productId: createSubscriptionDto.productId,
-        quantity: createSubscriptionDto.quantity,
-        frequency: (createSubscriptionDto.frequency ||
-          SubscriptionFrequency.WEEKLY) as SubscriptionFrequency,
-        status: SubscriptionStatus.ACTIVE,
-        nextBillingAt: this.calculateNextBillingDate(
-          (createSubscriptionDto.frequency ||
-            SubscriptionFrequency.WEEKLY) as SubscriptionFrequency,
-        ),
-      },
-    });
+    if (!product.subPrice) {
+      throw new BadRequestException("This product is not available for subscription");
+    }
 
-    // Create subscription event
-    await this.prisma.subscriptionEvent.create({
-      data: {
-        subscriptionId: subscription.id,
-        eventType: SubscriptionEventType.CREATED,
-        description: `Subscription created for ${product.name}`,
-      },
-    });
+    const frequency = (createDto.frequency || SubscriptionFrequency.WEEKLY) as SubscriptionFrequency;
+    const amount = product.subPrice * createDto.quantity;
 
-    return this.mapSubscriptionToResponse(subscription, product);
+    try {
+      // 1. Find or create Razorpay Plan
+      const razorpayPlanId = await this.getOrCreateRazorpayPlan(product.id, amount, frequency);
+
+      // 2. Create Subscription in Razorpay
+      const razorpaySubscription = await this.razorpay.subscriptions.create({
+        plan_id: razorpayPlanId,
+        customer_notify: 1,
+        total_count: frequency === SubscriptionFrequency.WEEKLY ? 52 : frequency === SubscriptionFrequency.FORTNIGHTLY ? 26 : 12,
+        notes: {
+          userId,
+          productId: product.id,
+          quantity: createDto.quantity.toString(),
+        },
+      });
+
+      // 3. Save Subscription in DB with status PENDING
+      const subscription = await this.prisma.subscription.create({
+        data: {
+          userId,
+          productId: product.id,
+          planId: await this.prisma.subscriptionPlan.findFirst({
+            where: { razorpayPlanId },
+            select: { id: true },
+          }).then((p) => p?.id),
+          quantity: createDto.quantity,
+          frequency: frequency as any,
+          status: SubscriptionStatus.PENDING as any,
+          razorpaySubscriptionId: razorpaySubscription.id,
+          nextBillingAt: new Date(), // Will be updated on activation
+          addressLine1: createDto.addressLine1,
+          addressLine2: createDto.addressLine2,
+          city: createDto.city,
+          state: createDto.state,
+          postalCode: createDto.postalCode,
+        },
+      });
+
+      // 4. Create initial event
+      await this.prisma.subscriptionEvent.create({
+        data: {
+          subscriptionId: subscription.id,
+          eventType: SubscriptionEventType.CREATED as any,
+          description: `Subscription created for ${product.name}, awaiting mandate authentication.`,
+          metadata: { razorpaySubscriptionId: razorpaySubscription.id },
+        },
+      });
+
+      const response = this.mapSubscriptionToResponse(subscription, product);
+      response.razorpaySubscriptionId = razorpaySubscription.id;
+      response.shortUrl = razorpaySubscription.short_url;
+      
+      return response;
+    } catch (error: any) {
+      this.logger.error(`Failed to create subscription: ${error.message}`, error.stack);
+      throw new BadRequestException(`Failed to create subscription: ${error.message}`);
+    }
   }
 
-  async getUserSubscriptions(userId: string) {
+  async findUserSubscriptions(userId: string) {
     const subscriptions = await this.prisma.subscription.findMany({
-      where: {
-        userId,
-        status: SubscriptionStatus.ACTIVE,
-      },
-      include: {
-        product: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      where: { userId },
+      include: { product: true },
+      orderBy: { createdAt: "desc" },
     });
 
-    return subscriptions.map((sub) =>
-      this.mapSubscriptionToResponse(sub, sub.product),
-    );
+    return subscriptions.map((sub) => this.mapSubscriptionToResponse(sub, sub.product));
   }
 
-  async pauseSubscription(
-    userId: string,
+  async getSubscriptionById(userId: string, id: string) {
+    const subscription = await this.prisma.subscription.findFirst({
+      where: { id, userId },
+      include: { product: true },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException("Subscription not found");
+    }
+
+    return this.mapSubscriptionToResponse(subscription, subscription.product);
+  }
+
+  async transitionStatus(
     subscriptionId: string,
-    durationWeeks: number,
+    newStatus: SubscriptionStatus,
+    description?: string,
+    metadata?: any,
   ) {
-    const subscription = await this.prisma.subscription.findFirst({
-      where: {
-        id: subscriptionId,
-        userId,
-      },
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
     });
 
     if (!subscription) {
-      throw new Error("Subscription not found");
+      throw new NotFoundException("Subscription not found");
     }
 
-    if (subscription.status !== SubscriptionStatus.ACTIVE) {
-      throw new Error("Only active subscriptions can be paused");
-    }
-
-    // Calculate resume date
-    const resumeDate = new Date();
-    resumeDate.setDate(resumeDate.getDate() + durationWeeks * 7);
-
-    await this.prisma.subscription.update({
+    const updatedSubscription = await this.prisma.subscription.update({
       where: { id: subscriptionId },
       data: {
-        status: SubscriptionStatus.PAUSED,
-        nextBillingAt: resumeDate, // Push billing forward
+        status: newStatus as any,
+        ...(newStatus === SubscriptionStatus.ACTIVE ? { nextBillingAt: this.calculateNextBillingDate(subscription.frequency as any) } : {}),
       },
     });
 
-    // Create subscription event
     await this.prisma.subscriptionEvent.create({
       data: {
         subscriptionId,
-        eventType: SubscriptionEventType.PAUSED,
-        description: `Subscription paused for ${durationWeeks} weeks`,
-        metadata: { resumeDate: resumeDate.toISOString(), durationWeeks },
+        eventType: this.mapStatusToEventType(newStatus) as any,
+        description: description || `Status transitioned to ${newStatus}`,
+        metadata: metadata || {},
       },
     });
 
-    return { success: true, message: "Subscription paused successfully" };
+    return updatedSubscription;
   }
 
-  async resumeSubscription(userId: string, subscriptionId: string) {
-    const subscription = await this.prisma.subscription.findFirst({
+  private async getOrCreateRazorpayPlan(productId: string, amount: number, frequency: SubscriptionFrequency) {
+    const existingPlan = await this.prisma.subscriptionPlan.findUnique({
       where: {
-        id: subscriptionId,
-        userId,
+        productId_frequency_amount: {
+          productId,
+          frequency: frequency as any,
+          amount,
+        },
       },
     });
 
-    if (!subscription) {
-      throw new Error("Subscription not found");
+    if (existingPlan && existingPlan.isActive) {
+      return existingPlan.razorpayPlanId;
     }
 
-    if (subscription.status !== SubscriptionStatus.PAUSED) {
-      throw new Error("Only paused subscriptions can be resumed");
-    }
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const planName = `${product?.name || "Product"} - ${frequency} Subscription`;
 
-    await this.prisma.subscription.update({
-      where: { id: subscriptionId },
-      data: {
-        status: SubscriptionStatus.ACTIVE,
-        nextBillingAt: this.calculateNextBillingDate(
-          subscription.frequency as SubscriptionFrequency,
-        ),
+    const razorpayPlan = await this.razorpay.plans.create({
+      period: frequency === SubscriptionFrequency.MONTHLY ? "monthly" : "weekly",
+      interval: frequency === SubscriptionFrequency.FORTNIGHTLY ? 2 : 1,
+      item: {
+        name: planName,
+        amount: amount,
+        currency: "INR",
+        description: `Modern Essentials ${frequency} Subscription for ${product?.name}`,
       },
     });
 
-    // Create subscription event
-    await this.prisma.subscriptionEvent.create({
+    await this.prisma.subscriptionPlan.create({
       data: {
-        subscriptionId,
-        eventType: SubscriptionEventType.RESUMED,
-        description: "Subscription resumed",
+        productId,
+        frequency: frequency as any,
+        amount,
+        razorpayPlanId: razorpayPlan.id,
       },
     });
 
-    return { success: true, message: "Subscription resumed successfully" };
+    return razorpayPlan.id;
   }
 
-  async cancelSubscription(userId: string, subscriptionId: string) {
-    const subscription = await this.prisma.subscription.findFirst({
-      where: {
-        id: subscriptionId,
-        userId,
-      },
-    });
-
-    if (!subscription) {
-      throw new Error("Subscription not found");
-    }
-
-    await this.prisma.subscription.update({
-      where: { id: subscriptionId },
-      data: {
-        status: SubscriptionStatus.CANCELLED,
-        cancelledAt: new Date(),
-      },
-    });
-
-    // Create subscription event
-    await this.prisma.subscriptionEvent.create({
-      data: {
-        subscriptionId,
-        eventType: SubscriptionEventType.CANCELLED,
-        description: "Subscription cancelled by user",
-      },
-    });
-
-    return { success: true, message: "Subscription cancelled successfully" };
-  }
-
-  async updateSubscription(
-    userId: string,
-    subscriptionId: string,
-    updateDto: UpdateSubscriptionDto,
-  ) {
-    const subscription = await this.prisma.subscription.findFirst({
-      where: {
-        id: subscriptionId,
-        userId,
-      },
-    });
-
-    if (!subscription) {
-      throw new Error("Subscription not found");
-    }
-
-    const updateData: any = {};
-
-    if (updateDto.quantity !== undefined) {
-      updateData.quantity = updateDto.quantity;
-    }
-
-    if (updateDto.frequency !== undefined) {
-      updateData.frequency = updateDto.frequency;
-      updateData.nextBillingAt = this.calculateNextBillingDate(
-        updateDto.frequency as SubscriptionFrequency,
-      );
-    }
-
-    await this.prisma.subscription.update({
-      where: { id: subscriptionId },
-      data: updateData,
-    });
-
-    // Create subscription event
-    await this.prisma.subscriptionEvent.create({
-      data: {
-        subscriptionId,
-        eventType: SubscriptionEventType.UPDATED,
-        description: `Subscription updated: ${JSON.stringify(updateDto)}`,
-        metadata: updateDto as any,
-      },
-    });
-
-    return { success: true, message: "Subscription updated successfully" };
-  }
-
-  private calculateNextBillingDate(frequency: SubscriptionFrequency): Date {
-    const now = new Date();
-    let nextBilling = new Date(now);
-
+  public calculateNextBillingDate(frequency: SubscriptionFrequency): Date {
+    const nextBilling = new Date();
     switch (frequency) {
       case SubscriptionFrequency.WEEKLY:
-        nextBilling.setDate(now.getDate() + 7);
+        nextBilling.setDate(nextBilling.getDate() + 7);
         break;
       case SubscriptionFrequency.FORTNIGHTLY:
-        nextBilling.setDate(now.getDate() + 14);
+        nextBilling.setDate(nextBilling.getDate() + 14);
         break;
       case SubscriptionFrequency.MONTHLY:
-        nextBilling.setMonth(now.getMonth() + 1);
+        nextBilling.setMonth(nextBilling.getMonth() + 1);
         break;
       default:
-        nextBilling.setDate(now.getDate() + 7); // Default to weekly
+        nextBilling.setDate(nextBilling.getDate() + 7);
     }
-
     return nextBilling;
   }
 
-  private mapSubscriptionToResponse(
-    subscription: any,
-    product: any,
-  ): SubscriptionResponseDto {
+  private mapStatusToEventType(status: SubscriptionStatus): SubscriptionEventType {
+    switch (status) {
+      case SubscriptionStatus.ACTIVE: return SubscriptionEventType.ACTIVATED;
+      case SubscriptionStatus.PAUSED: return SubscriptionEventType.PAUSED;
+      case SubscriptionStatus.CANCELLED: return SubscriptionEventType.CANCELLED;
+      case SubscriptionStatus.EXPIRED: return SubscriptionEventType.EXPIRED;
+      default: return SubscriptionEventType.UPDATED;
+    }
+  }
+
+  private mapSubscriptionToResponse(subscription: any, product: any): SubscriptionResponseDto {
     return {
       id: subscription.id,
       productId: subscription.productId,
@@ -291,8 +258,9 @@ export class SubscriptionService {
       frequency: subscription.frequency,
       status: subscription.status,
       nextBillingAt: subscription.nextBillingAt,
-      price: subscription.price,
-      savings: this.calculateSavings(product.price, product.subPrice),
+      price: product.subPrice * subscription.quantity,
+      savings: Math.round(((product.price - product.subPrice) / product.price) * 100),
+      razorpaySubscriptionId: subscription.razorpaySubscriptionId,
       product: {
         id: product.id,
         name: product.name,
@@ -302,10 +270,5 @@ export class SubscriptionService {
         category: product.category,
       },
     };
-  }
-
-  private calculateSavings(price: number, subPrice: number): number {
-    if (!subPrice) return 0;
-    return Math.round(((price - subPrice) / price) * 100);
   }
 }

@@ -5,11 +5,15 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma.service";
 
 @Injectable()
 export class ClerkAuthGuard implements CanActivate {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -33,12 +37,28 @@ export class ClerkAuthGuard implements CanActivate {
       clerkId = token;
     } else {
       try {
-        const payload = await verifyToken(token, {});
+        const secretKey = this.configService.get<string>("CLERK_SECRET_KEY");
+        if (!secretKey) {
+          console.error("DEBUG: CLERK_SECRET_KEY is missing from config");
+          throw new Error("CLERK_SECRET_KEY is not defined in environment variables");
+        }
+        
+        // Debug info (masked for safety)
+        const maskedToken = token.length > 20 
+          ? token.substring(0, 10) + "..." + token.substring(token.length - 10)
+          : token;
+        const maskedSecret = secretKey.substring(0, 8) + "..." + secretKey.substring(secretKey.length - 4);
+        console.debug(`DEBUG: Verifying Clerk token: ${maskedToken} with secret: ${maskedSecret}`);
+
+        const payload = await verifyToken(token, {
+          secretKey: secretKey,
+        });
         clerkId = payload.sub as string;
         email = (payload as any).email as string;
         request.clerkPayload = payload;
-      } catch (error) {
-        throw new UnauthorizedException("Invalid token");
+      } catch (error: any) {
+        console.error("Clerk token verification failed:", error.message);
+        throw new UnauthorizedException(`Invalid token: ${error.message}`);
       }
     }
 
@@ -86,7 +106,7 @@ export class ClerkAuthGuard implements CanActivate {
   private extractTokenFromHeader(request: any): string | null {
     const authHeader = request.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
-      return authHeader.substring(7);
+      return authHeader.substring(7).trim();
     }
     return null;
   }

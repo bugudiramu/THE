@@ -31,7 +31,7 @@ export function ProductList({ products }: ProductListProps) {
       {products.map((product) => {
         const mainImage =
           product.images?.[0]?.url ||
-          "https://images.unsplash.com/photo-1518569656558-1f25e69c93d7?w=800&h=600&fit=crop";
+          "https://images.unsplash.com/photo-1559229873-383d75ba200f?q=80&w=2012&auto=format&fit=crop";
         const inCartQty = getInCartQuantity(product.id);
 
         return (

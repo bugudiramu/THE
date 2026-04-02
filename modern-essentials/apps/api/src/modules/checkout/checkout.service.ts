@@ -35,9 +35,8 @@ export class CheckoutService {
       // Note: We use the first item's frequency as the primary frequency for simplicity
       const frequency = (subItems[0].frequency?.toLowerCase() || "weekly") as "weekly" | "monthly";
       const planName = `Modern Essentials ${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Subscription - ₹${recurringAmount / 100}`;
-      
-      const razorpayPlan = await this.getOrCreateRazorpayPlan(planName, recurringAmount, frequency);
 
+      const razorpayPlan = await this.getOrCreateRazorpayPlan(subItems[0].productId, planName, recurringAmount, frequency);
       // 2. Initiate the Razorpay Subscription
       const subscriptionOptions: any = {
         plan_id: razorpayPlan.id,
@@ -65,6 +64,24 @@ export class CheckoutService {
 
       const razorpaySubscription = await this.razorpay.subscriptions.create(subscriptionOptions);
 
+      // Save Subscription in DB with status PENDING (§3.1, Week 7)
+      const primarySub = subItems[0];
+      await this.prisma.subscription.create({
+        data: {
+          userId,
+          productId: primarySub.productId,
+          quantity: primarySub.quantity,
+          frequency: (primarySub.frequency || 'WEEKLY') as any,
+          status: 'PENDING',
+          razorpaySubscriptionId: razorpaySubscription.id,
+          nextBillingAt: new Date(), // Placeholder until activated
+          addressLine1: createOrderDto.address,
+          city: createOrderDto.city,
+          state: createOrderDto.state,
+          postalCode: (createOrderDto as any).pincode,
+        },
+      });
+
       return {
         subscriptionId: razorpaySubscription.id,
         amount: Number(razorpaySubscription.charge_at) || (recurringAmount + upfrontAmount),
@@ -79,10 +96,22 @@ export class CheckoutService {
     }
   }
 
-  private async getOrCreateRazorpayPlan(name: string, amount: number, interval: "weekly" | "monthly") {
-    // In a production app, we would cache these in the DB or check if one exists.
-    // For now, we create them dynamically as requested in the plan.
-    return this.razorpay.plans.create({
+  private async getOrCreateRazorpayPlan(productId: string, name: string, amount: number, interval: "weekly" | "monthly") {
+    // Actually, I can search for a plan by name and amount in the DB
+    const frequency = interval === "weekly" ? "WEEKLY" : "MONTHLY";
+    const existingPlan = await this.prisma.subscriptionPlan.findFirst({
+      where: {
+        productId,
+        amount,
+        frequency: frequency as any,
+      }
+    });
+
+    if (existingPlan) {
+      return { id: existingPlan.razorpayPlanId };
+    }
+
+    const razorpayPlan = await this.razorpay.plans.create({
       period: interval === "weekly" ? "weekly" : "monthly",
       interval: 1,
       item: {
@@ -92,6 +121,18 @@ export class CheckoutService {
         description: "Modern Essentials Recurring Order",
       },
     });
+
+    // Save to cache
+    await this.prisma.subscriptionPlan.create({
+      data: {
+        productId,
+        amount,
+        frequency: frequency as any,
+        razorpayPlanId: razorpayPlan.id,
+      },
+    });
+
+    return razorpayPlan;
   }
 
   async createOrder(
@@ -195,32 +236,45 @@ export class CheckoutService {
         let subscriptionId: string | undefined;
 
         if (subItems.length > 0 && razorpay_subscription_id) {
-          // We assume one primary subscription for now
-          const primarySub = subItems[0];
-          const frequency = (primarySub.frequency || 'WEEKLY') as any;
-
-          const subscription = await tx.subscription.create({
-            data: {
-              userId: dbUser.id,
-              productId: primarySub.productId,
-              quantity: primarySub.quantity,
-              frequency,
-              status: 'ACTIVE',
-              nextBillingAt: this.calculateNextBillingDate(frequency),
-            },
+          // Find the existing PENDING subscription created during createSubscription
+          const existingSub = await tx.subscription.findUnique({
+            where: { razorpaySubscriptionId: razorpay_subscription_id }
           });
-          
-          subscriptionId = subscription.id;
 
-          // Log subscription event
-          await tx.subscriptionEvent.create({
-            data: {
-              subscriptionId: subscription.id,
-              eventType: 'ACTIVATED',
-              description: `Subscription activated via Razorpay ID: ${razorpay_subscription_id}`,
-              metadata: { razorpay_subscription_id, razorpay_payment_id }
-            }
-          });
+          if (existingSub) {
+            subscriptionId = existingSub.id;
+            // The webhook will transition it to ACTIVE. 
+            // We can mark it as AUTHENTICATED if we want immediate feedback, 
+            // but for now let's just log the event.
+            await tx.subscriptionEvent.create({
+              data: {
+                subscriptionId: existingSub.id,
+                eventType: 'CREATED',
+                description: `Mandate authenticated via Razorpay ID: ${razorpay_subscription_id}`,
+                metadata: { razorpay_subscription_id, razorpay_payment_id }
+              }
+            });
+          } else {
+            // Fallback: Create if not exists (should not happen with Week 7 flow)
+            const primarySub = subItems[0];
+            const frequency = (primarySub.frequency || 'WEEKLY') as any;
+            const subscription = await tx.subscription.create({
+              data: {
+                userId: dbUser.id,
+                productId: primarySub.productId,
+                quantity: primarySub.quantity,
+                frequency,
+                status: 'PENDING',
+                razorpaySubscriptionId: razorpay_subscription_id,
+                nextBillingAt: new Date(),
+                addressLine1: orderData.address,
+                city: orderData.city,
+                state: orderData.state,
+                postalCode: (orderData as any).pincode,
+              },
+            });
+            subscriptionId = subscription.id;
+          }
         }
 
         // 3. Handle One-Time Items (or Upfront Addons for hybrid carts)
@@ -286,14 +340,6 @@ export class CheckoutService {
       console.error("Payment verification failed:", error);
       throw new BadRequestException(error.message || "Payment verification failed");
     }
-  }
-
-  private calculateNextBillingDate(frequency: string): Date {
-    const date = new Date();
-    if (frequency === 'WEEKLY') date.setDate(date.getDate() + 7);
-    else if (frequency === 'FORTNIGHTLY') date.setDate(date.getDate() + 14);
-    else if (frequency === 'MONTHLY') date.setMonth(date.getMonth() + 1);
-    return date;
   }
 
   async createSubscriptionPlan(

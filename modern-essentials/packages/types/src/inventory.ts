@@ -11,9 +11,9 @@ export type BatchStatus = z.infer<typeof BatchStatusSchema>;
 
 export const QCStatusSchema = z.enum([
   'PENDING',
-  'PASS',
+  'PASSED',
   'QUARANTINE',
-  'REJECT',
+  'REJECTED',
 ]);
 export type QCStatus = z.infer<typeof QCStatusSchema>;
 

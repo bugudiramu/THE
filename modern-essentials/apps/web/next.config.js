@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@modern-essentials/types", "@modern-essentials/utils", "@modern-essentials/ui"],
   images: {
-    domains: ["images.unsplash.com"],
+    domains: ["images.unsplash.com", "plus.unsplash.com"],
   },
 };
 

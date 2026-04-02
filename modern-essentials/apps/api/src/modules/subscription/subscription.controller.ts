@@ -10,7 +10,6 @@ import {
 import { ClerkAuthGuard } from "../../common/guards/clerk-auth.guard";
 import {
   CreateSubscriptionDto,
-  UpdateSubscriptionDto,
 } from "./subscription.dto";
 import { SubscriptionService } from "./subscription.service";
 
@@ -19,7 +18,7 @@ import { SubscriptionService } from "./subscription.service";
 export class SubscriptionController {
   constructor(private subscriptionService: SubscriptionService) {}
 
-  @Post()
+  @Post("create")
   async createSubscription(
     @Req() req: any,
     @Body() createSubscriptionDto: CreateSubscriptionDto,
@@ -31,55 +30,32 @@ export class SubscriptionController {
     );
   }
 
+  @Get("mine")
+  async getMySubscriptions(@Req() req: any) {
+    const userId = req.user.id;
+    return this.subscriptionService.findUserSubscriptions(userId);
+  }
+
+  @Get(":id")
+  async getSubscriptionById(
+    @Req() req: any,
+    @Param("id") id: string,
+  ) {
+    const userId = req.user.id;
+    return this.subscriptionService.getSubscriptionById(userId, id);
+  }
+
+  // Support old endpoints for backward compatibility if needed, or just follow the plan
+  @Post()
+  async createSubscriptionLegacy(
+    @Req() req: any,
+    @Body() createSubscriptionDto: CreateSubscriptionDto,
+  ) {
+    return this.createSubscription(req, createSubscriptionDto);
+  }
+
   @Get()
-  async getUserSubscriptions(@Req() req: any) {
-    const userId = req.user.id;
-    return this.subscriptionService.getUserSubscriptions(userId);
-  }
-
-  @Post(":id/pause")
-  async pauseSubscription(
-    @Req() req: any,
-    @Param("id") subscriptionId: string,
-    @Body() body: { durationWeeks: number },
-  ) {
-    const userId = req.user.id;
-    return this.subscriptionService.pauseSubscription(
-      userId,
-      subscriptionId,
-      body.durationWeeks,
-    );
-  }
-
-  @Post(":id/resume")
-  async resumeSubscription(
-    @Req() req: any,
-    @Param("id") subscriptionId: string,
-  ) {
-    const userId = req.user.id;
-    return this.subscriptionService.resumeSubscription(userId, subscriptionId);
-  }
-
-  @Post(":id/cancel")
-  async cancelSubscription(
-    @Req() req: any,
-    @Param("id") subscriptionId: string,
-  ) {
-    const userId = req.user.id;
-    return this.subscriptionService.cancelSubscription(userId, subscriptionId);
-  }
-
-  @Post(":id/update")
-  async updateSubscription(
-    @Req() req: any,
-    @Param("id") subscriptionId: string,
-    @Body() updateDto: UpdateSubscriptionDto,
-  ) {
-    const userId = req.user.id;
-    return this.subscriptionService.updateSubscription(
-      userId,
-      subscriptionId,
-      updateDto,
-    );
+  async getUserSubscriptionsLegacy(@Req() req: any) {
+    return this.getMySubscriptions(req);
   }
 }

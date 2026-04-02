@@ -40,7 +40,7 @@ export class InventoryService {
       const batches = product.inventoryBatches;
       const totalQty = batches.reduce((sum, b) => sum + b.qty, 0);
       const availableQty = batches
-        .filter((b) => b.qcStatus === "PASS")
+        .filter((b) => b.qcStatus === "PASSED")
         .reduce((sum, b) => sum + b.qty, 0);
       const qcPendingQty = batches
         .filter((b) => b.qcStatus === "PENDING")
@@ -168,12 +168,12 @@ export class InventoryService {
         where: { id: batchId },
         data: {
           qcStatus: dto.qcStatus,
-          status: dto.qcStatus === "REJECT" ? "WASTAGE" : "AVAILABLE",
+          status: dto.qcStatus === "REJECTED" ? "WASTAGE" : "AVAILABLE",
         },
       });
 
       // If REJECTED, log wastage
-      if (dto.qcStatus === "REJECT") {
+      if (dto.qcStatus === "REJECTED") {
         await tx.wastageLog.create({
           data: {
             productId: batch.productId,

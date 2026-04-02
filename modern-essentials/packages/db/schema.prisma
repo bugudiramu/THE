@@ -54,13 +54,15 @@ model Product {
 
   // Relations
   inventoryBatches InventoryBatch[]
-  orders           OrderItem[]
+  orderItems       OrderItem[]
   cartItems        CartItem[]
+  subscriptions    Subscription[]
   subscriptionItems SubscriptionItem[]
-  subscriptions     Subscription[]
+  subscriptionPlans SubscriptionPlan[]
 
   @@map("products")
-}
+  }
+
 
 enum Category {
   REGULAR_EGGS
@@ -117,9 +119,9 @@ enum BatchStatus {
 
 enum QCStatus {
   PENDING
-  PASS
+  PASSED
   QUARANTINE
-  REJECT
+  REJECTED
 }
 
 // Farm registry for sourcing traceability
@@ -197,6 +199,7 @@ model Order {
   
   // Delivery Address
   addressLine1   String?     @map("address_line_1")
+  addressLine2   String?     @map("address_line_2")
   city           String?
   state          String?
   postalCode     String?     @map("postal_code")
@@ -254,10 +257,16 @@ model Subscription {
   id                String              @id @default(cuid())
   userId             String
   productId          String
+  planId             String?            @map("plan_id")
   razorpaySubscriptionId String?        @unique @map("razorpay_subscription_id")
   quantity           Int                  // eggs per delivery
   frequency          SubscriptionFrequency  @default(WEEKLY)
   status             SubscriptionStatus   @default(ACTIVE)
+  addressLine1       String?              @map("address_line_1")
+  addressLine2       String?              @map("address_line_2")
+  city               String?
+  state              String?
+  postalCode         String?              @map("postal_code")
   nextBillingAt      DateTime             @default(now()) // when next payment/order should be generated
   cancelledAt        DateTime?
   createdAt          DateTime             @default(now())
@@ -266,12 +275,31 @@ model Subscription {
   // Relations
   user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   product    Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plan       SubscriptionPlan? @relation(fields: [planId], references: [id])
   items      SubscriptionItem[]
   events      SubscriptionEvent[]
   orders     Order[]
 
   @@index([userId, status])
   @@map("subscriptions")
+}
+
+model SubscriptionPlan {
+  id              String                @id @default(cuid())
+  productId       String                @map("product_id")
+  frequency       SubscriptionFrequency
+  amount          Int                   // in paise
+  razorpayPlanId  String                @unique @map("razorpay_plan_id")
+  isActive        Boolean               @default(true) @map("is_active")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+
+  // Relations
+  product         Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  subscriptions   Subscription[]
+
+  @@unique([productId, frequency, amount])
+  @@map("subscription_plans")
 }
 
 enum SubscriptionFrequency {

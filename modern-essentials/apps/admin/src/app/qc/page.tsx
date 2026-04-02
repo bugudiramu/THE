@@ -67,7 +67,7 @@ function QcLogContent() {
         {/* Filters */}
         <div className="flex items-center justify-between">
           <div className="flex bg-white rounded-lg border p-1 shadow-sm">
-            {["PENDING", "PASS", "QUARANTINE", "REJECT", "ALL"].map((s) => (
+            {["PENDING", "PASSED", "QUARANTINE", "REJECTED", "ALL"].map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
@@ -111,12 +111,12 @@ function QcLogContent() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between p-5 gap-4">
                   <div className="flex items-start gap-4">
                     <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
-                      batch.qcStatus === 'PASS' ? 'bg-emerald-50' :
+                      batch.qcStatus === 'PASSED' ? 'bg-emerald-50' :
                       batch.qcStatus === 'PENDING' ? 'bg-orange-50' :
                       'bg-red-50'
                     }`}>
                       <ShieldCheck className={`h-6 w-6 ${
-                        batch.qcStatus === 'PASS' ? 'text-emerald-600' :
+                        batch.qcStatus === 'PASSED' ? 'text-emerald-600' :
                         batch.qcStatus === 'PENDING' ? 'text-orange-600' :
                         'text-red-600'
                       }`} />
@@ -138,12 +138,12 @@ function QcLogContent() {
                     ) : (
                       <>
                         <button
-                          onClick={() => handleUpdateStatus(batch.id, 'PASS')}
-                          disabled={batch.qcStatus === 'PASS'}
+                          onClick={() => handleUpdateStatus(batch.id, 'PASSED')}
+                          disabled={batch.qcStatus === 'PASSED'}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 disabled:opacity-30 transition-colors"
                         >
                           <Check className="h-3.5 w-3.5" />
-                          PASS
+                          PASSED
                         </button>
                         <button
                           onClick={() => handleUpdateStatus(batch.id, 'QUARANTINE')}
@@ -154,12 +154,12 @@ function QcLogContent() {
                           QUARANTINE
                         </button>
                         <button
-                          onClick={() => handleUpdateStatus(batch.id, 'REJECT')}
-                          disabled={batch.qcStatus === 'REJECT'}
+                          onClick={() => handleUpdateStatus(batch.id, 'REJECTED')}
+                          disabled={batch.qcStatus === 'REJECTED'}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold hover:bg-red-600 disabled:opacity-30 transition-colors"
                         >
                           <X className="h-3.5 w-3.5" />
-                          REJECT
+                          REJECTED
                         </button>
                       </>
                     )}

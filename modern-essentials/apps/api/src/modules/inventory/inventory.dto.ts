@@ -36,7 +36,7 @@ export class CreateGrnDto {
 }
 
 export class UpdateQcDto {
-  @IsEnum(["PENDING", "PASS", "QUARANTINE", "REJECT"])
+  @IsEnum(["PENDING", "PASSED", "QUARANTINE", "REJECTED"])
   qcStatus!: QCStatus;
 
   @IsString()

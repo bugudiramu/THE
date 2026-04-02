@@ -11,6 +11,26 @@ export class CreateSubscriptionDto {
   @IsEnum(['WEEKLY', 'FORTNIGHTLY', 'MONTHLY'])
   @IsOptional()
   frequency?: string;
+
+  @IsString()
+  @IsOptional()
+  addressLine1?: string;
+
+  @IsString()
+  @IsOptional()
+  addressLine2?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @IsString()
+  @IsOptional()
+  postalCode?: string;
 }
 
 export class UpdateSubscriptionDto {
@@ -34,6 +54,8 @@ export class SubscriptionResponseDto {
   nextBillingAt!: Date;
   price!: number;
   savings!: number;
+  razorpaySubscriptionId?: string;
+  shortUrl?: string;
   product!: {
     id: string;
     name: string;

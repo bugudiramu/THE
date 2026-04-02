@@ -7,6 +7,6 @@
     "declarationMap": true,
     "types": ["node"]
   },
-  "include": ["generated/client/**/*", "."],
-  "exclude": ["node_modules", "dist", "prisma/seed.ts"]
+  "include": ["generated/client/**/*", ".", "prisma/seed.ts"],
+  "exclude": ["node_modules", "dist"]
 }

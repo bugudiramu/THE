@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import {
   Button,
   Card,
@@ -30,6 +30,7 @@ interface FormData {
 
 function CheckoutContent() {
   const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSubscription = searchParams?.get("plan") === "subscribe";
@@ -86,7 +87,7 @@ function CheckoutContent() {
       let token = "test-user-123";
       if (isSignedIn && user) {
         try {
-          token = await (user as any).getToken();
+          token = (await getToken()) || user?.id || "test-user-123";
         } catch (error) {
           console.warn("Failed to get token, using fallback");
         }
@@ -144,7 +145,7 @@ function CheckoutContent() {
             let verifyToken = "test-user-123";
             if (isSignedIn && user) {
               try {
-                verifyToken = await (user as any).getToken();
+                verifyToken = (await getToken()) || user.id || "test-user-123";
               } catch (error) {
                 // Ignore
               }

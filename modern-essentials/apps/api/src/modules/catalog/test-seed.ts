@@ -22,7 +22,7 @@ export class TestSeedService {
         images: {
           create: [
             {
-              url: "https://images.unsplash.com/photo-1518569656558-1f25e69c93d7?w=800&h=600&fit=crop",
+              url: "https://images.unsplash.com/photo-1519077294537-9bc099d3ae6c?q=80&w=993&auto=format&fit=crop",
               alt: "Fresh brown eggs in a basket",
               sortOrder: 0,
             },
@@ -54,7 +54,7 @@ export class TestSeedService {
           images: {
             create: [
               {
-                url: "https://images.unsplash.com/photo-1518569656558-1f25e69c93d7?w=800&h=600&fit=crop",
+                url: "https://plus.unsplash.com/premium_photo-1676592428702-6f8db7c29ac1?q=80&w=988&auto=format&fit=crop",
                 alt: "Organic brown eggs",
                 sortOrder: 0,
               },
@@ -80,7 +80,7 @@ export class TestSeedService {
           images: {
             create: [
               {
-                url: "https://images.unsplash.com/photo-1518569656558-1f25e69c93d7?w=800&h=600&fit=crop",
+                url: "https://images.unsplash.com/photo-1559229873-383d75ba200f?q=80&w=2012&auto=format&fit=crop",
                 alt: "High-protein eggs",
                 sortOrder: 0,
               },

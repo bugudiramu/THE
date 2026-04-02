@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import {
   createContext,
   ReactNode,
@@ -94,6 +94,7 @@ const initialState: CartState = {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
   // Helper to persist to local storage as fallback
@@ -113,7 +114,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // If logged in, fetch from API
     if (isSignedIn && user) {
       try {
-        const token = await (user as any).getToken();
+        const token = (await getToken()) || user?.id || "test-user-123";
         const res = await fetch(`${apiUrl}/cart`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -156,7 +157,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     
     if (isSignedIn && user) {
       try {
-        const token = await (user as any).getToken();
+        const token = (await getToken()) || user?.id || "test-user-123";
         const res = await fetch(`${apiUrl}/cart/items`, {
           method: "POST",
           headers: {
@@ -225,7 +226,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateItem = async (itemId: string, quantity: number) => {
     if (isSignedIn && user) {
       try {
-        const token = await (user as any).getToken();
+        const token = (await getToken()) || user?.id || "test-user-123";
         const res = await fetch(`${apiUrl}/cart/items/${itemId}`, {
           method: "PUT",
           headers: {
@@ -261,7 +262,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = async (itemId: string) => {
     if (isSignedIn && user) {
       try {
-        const token = await (user as any).getToken();
+        const token = (await getToken()) || user?.id || "test-user-123";
         const res = await fetch(`${apiUrl}/cart/items/${itemId}`, {
           method: "DELETE",
           headers: {
@@ -291,7 +292,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = async () => {
     if (isSignedIn && user) {
       try {
-        const token = await (user as any).getToken();
+        const token = (await getToken()) || user?.id || "test-user-123";
         await fetch(`${apiUrl}/cart`, {
           method: "DELETE",
           headers: {

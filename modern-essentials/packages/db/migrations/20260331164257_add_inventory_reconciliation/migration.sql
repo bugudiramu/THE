@@ -8,21 +8,6 @@
 -- CreateEnum
 CREATE TYPE "WastageReason" AS ENUM ('BREAKAGE_PACKING', 'BREAKAGE_TRANSIT', 'QC_REJECTED', 'EXPIRED', 'CUSTOMER_RETURN', 'OTHER');
 
--- AlterEnum
-BEGIN;
-CREATE TYPE "QCStatus_new" AS ENUM ('PENDING', 'PASSED', 'QUARANTINE', 'REJECTED');
-ALTER TABLE "inventory_batches" ALTER COLUMN "qc_status" DROP DEFAULT;
-ALTER TABLE "inventory_batches" ALTER COLUMN "qc_status" TYPE "QCStatus_new" USING ("qc_status"::text::"QCStatus_new");
-ALTER TABLE "farm_batches" ALTER COLUMN "qc_status" TYPE "QCStatus_new" USING ("qc_status"::text::"QCStatus_new");
-ALTER TYPE "QCStatus" RENAME TO "QCStatus_old";
-ALTER TYPE "QCStatus_new" RENAME TO "QCStatus";
-DROP TYPE "QCStatus_old";
-ALTER TABLE "inventory_batches" ALTER COLUMN "qc_status" SET DEFAULT 'PENDING';
-COMMIT;
-
--- AlterTable
-ALTER TABLE "subscriptions" ADD COLUMN     "razorpay_subscription_id" TEXT;
-
 -- CreateTable
 CREATE TABLE "farms" (
     "id" TEXT NOT NULL,
@@ -45,13 +30,30 @@ CREATE TABLE "farm_batches" (
     "inventory_batch_id" TEXT NOT NULL,
     "qty_collected" INTEGER NOT NULL,
     "collected_at" TIMESTAMP(3) NOT NULL,
-    "qc_status" "QCStatus" NOT NULL DEFAULT 'PENDING',
+    "qc_status" TEXT NOT NULL DEFAULT 'PENDING',
     "temperature_on_arrival" DOUBLE PRECISION,
     "notes" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "farm_batches_pkey" PRIMARY KEY ("id")
 );
+
+-- AlterEnum
+BEGIN;
+CREATE TYPE "QCStatus_new" AS ENUM ('PENDING', 'PASSED', 'QUARANTINE', 'REJECTED');
+ALTER TABLE "inventory_batches" ALTER COLUMN "qc_status" DROP DEFAULT;
+ALTER TABLE "inventory_batches" ALTER COLUMN "qc_status" TYPE "QCStatus_new" USING ("qc_status"::text::"QCStatus_new");
+ALTER TABLE "farm_batches" ALTER COLUMN "qc_status" DROP DEFAULT;
+ALTER TABLE "farm_batches" ALTER COLUMN "qc_status" TYPE "QCStatus_new" USING ("qc_status"::text::"QCStatus_new");
+ALTER TYPE "QCStatus" RENAME TO "QCStatus_old";
+ALTER TYPE "QCStatus_new" RENAME TO "QCStatus";
+DROP TYPE "QCStatus_old";
+ALTER TABLE "inventory_batches" ALTER COLUMN "qc_status" SET DEFAULT 'PENDING';
+ALTER TABLE "farm_batches" ALTER COLUMN "qc_status" SET DEFAULT 'PENDING';
+COMMIT;
+
+-- AlterTable
+ALTER TABLE "subscriptions" ADD COLUMN     "razorpay_subscription_id" TEXT;
 
 -- CreateTable
 CREATE TABLE "wastage_logs" (

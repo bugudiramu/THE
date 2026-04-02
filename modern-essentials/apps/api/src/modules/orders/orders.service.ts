@@ -317,7 +317,7 @@ export class OrdersService {
     const batches = await this.prisma.inventoryBatch.findMany({
       where: {
         status: "AVAILABLE",
-        qcStatus: "PASS",
+        qcStatus: "PASSED",
         qty: { gt: 0 },
       },
       orderBy: {
