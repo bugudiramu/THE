@@ -1,3 +1,4 @@
+import { User } from "@modern-essentials/db";
 import {
   Body,
   Controller,
@@ -8,18 +9,17 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { InventoryService } from "./inventory.service";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { RequireAdmin } from "../../common/decorators/require-admin.decorator";
+import { AdminGuard } from "../../common/guards/admin.guard";
+import { ClerkAuthGuard } from "../../common/guards/clerk-auth.guard";
 import {
   CreateFarmDto,
   CreateGrnDto,
   ReconcileDto,
   UpdateQcDto,
 } from "./inventory.dto";
-import { ClerkAuthGuard } from "../../common/guards/clerk-auth.guard";
-import { AdminGuard } from "../../common/guards/admin.guard";
-import { RequireAdmin } from "../../common/decorators/require-admin.decorator";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { User } from "@modern-essentials/db";
+import { InventoryService } from "./inventory.service";
 
 @Controller("admin/inventory")
 @UseGuards(ClerkAuthGuard, AdminGuard)

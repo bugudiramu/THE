@@ -11,7 +11,7 @@
     "typecheck": "turbo run typecheck",
     "db:migrate": "turbo run db:migrate",
     "db:generate": "turbo run db:generate",
-    "db:studio": "pnpm --filter db studio",
+    "db:studio": "turbo run db:studio",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "prepare": "husky"
   },

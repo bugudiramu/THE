@@ -34,41 +34,50 @@ export function QuantityPicker({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <Label className="text-base font-semibold">Quantity</Label>
+    <div className="space-y-6 bg-muted/20 p-6 rounded-2xl border border-muted/50">
+      <div className="flex justify-between items-end">
+        <div className="space-y-1">
+          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Select Quantity</Label>
+          <p className="text-sm font-bold text-foreground">Adjust your delivery size</p>
+        </div>
         <div className="text-right">
-          <p className="font-bold text-teal-700">₹{((pricePerUnit * value) / 100).toFixed(2)}</p>
-          <p className="text-[10px] text-muted-foreground">total per delivery</p>
+          <p className="text-2xl font-black text-teal-700">₹{((pricePerUnit * value) / 100).toFixed(2)}</p>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">per delivery</p>
         </div>
       </div>
-      <div className="flex items-center justify-between border rounded-lg p-2 bg-gray-50">
+
+      <div className="flex items-center justify-between bg-white border-2 border-muted p-2 rounded-2xl shadow-sm">
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded-full bg-white shadow-sm"
+          className="h-12 w-12 rounded-xl bg-muted/10 hover:bg-teal-50 hover:text-teal-600 transition-colors"
           onClick={decrement}
           disabled={value <= min}
         >
-          <Minus className="h-4 w-4" />
+          <Minus className="h-5 w-5" />
         </Button>
-        <div className="text-center">
-          <span className="text-2xl font-bold">{value}</span>
-          <span className="text-sm text-muted-foreground ml-1">Eggs</span>
+        
+        <div className="flex flex-col items-center">
+          <span className="text-3xl font-black text-foreground tabular-nums">{value}</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Eggs</span>
         </div>
+
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded-full bg-white shadow-sm"
+          className="h-12 w-12 rounded-xl bg-muted/10 hover:bg-teal-50 hover:text-teal-600 transition-colors"
           onClick={increment}
           disabled={value >= max}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground text-center">
-        Recommended: {value >= 24 ? "Large Family" : value >= 12 ? "Regular Family" : "Single / Couple"}
-      </p>
+
+      <div className="bg-white/50 p-3 rounded-xl border border-dashed text-center">
+        <p className="text-xs font-bold text-muted-foreground">
+          Recommended for: <span className="text-foreground">{value >= 24 ? "Large Family (4+ people)" : value >= 12 ? "Regular Family (2-3 people)" : "Individuals / Couples"}</span>
+        </p>
+      </div>
     </div>
   );
 }

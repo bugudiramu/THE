@@ -102,6 +102,13 @@ export class WebhooksService {
                 { razorpayEventId: eventId }
               );
               break;
+            case "subscription.resumed":
+              await this.subscriptionService.transitionStatus(
+                subscription.id,
+                SubscriptionStatus.ACTIVE,
+                { razorpayEventId: eventId }
+              );
+              break;
           }
         }
       }

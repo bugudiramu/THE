@@ -16,18 +16,24 @@ import { Label } from "@modern-essentials/ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@modern-essentials/ui";
 import { ClipboardCheck, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { IBatch, IReconciliation, WastageReason } from "@modern-essentials/types";
+
+import { apiGet, apiPost } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default function ReconcilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedBatchId = searchParams.get("batchId");
+
   const [batches, setBatches] = useState<IBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<IReconciliation>({
-    batchId: "",
+    batchId: preselectedBatchId || "",
     physicalQty: 0,
     reason: "OTHER",
     notes: "",
@@ -38,8 +44,8 @@ export default function ReconcilePage() {
   useEffect(() => {
     async function fetchBatches() {
       try {
-        const res = await fetch("/api/admin/inventory/batches?status=AVAILABLE");
-        if (res.ok) setBatches(await res.json());
+        const data = await apiGet<IBatch[]>("admin/inventory/batches?status=AVAILABLE");
+        setBatches(data);
       } catch (error) {
         console.error("Failed to fetch batches:", error);
       } finally {
@@ -55,19 +61,9 @@ export default function ReconcilePage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/admin/inventory/reconcile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        router.push("/inventory");
-        router.refresh();
-      } else {
-        const err = await res.json();
-        alert(`Error: ${err.message || "Failed to reconcile"}`);
-      }
+      await apiPost("admin/inventory/reconcile", formData);
+      router.push("/inventory");
+      router.refresh();
     } catch (error) {
       alert("Failed to submit reconciliation");
     } finally {
@@ -107,6 +103,7 @@ export default function ReconcilePage() {
             <div className="grid gap-2">
               <Label htmlFor="batch">Select Batch</Label>
               <Select 
+                value={formData.batchId}
                 onValueChange={(val: string | null) => {
                   if (val) setFormData({ ...formData, batchId: val });
                 }}

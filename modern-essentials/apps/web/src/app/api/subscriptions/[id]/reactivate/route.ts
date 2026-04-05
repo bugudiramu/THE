@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
 export async function POST(
   _request: Request,
   { params }: { params: { id: string } }
@@ -15,7 +17,7 @@ export async function POST(
   const id = params.id;
 
   try {
-    const response = await fetch(`${process.env.API_URL}/subscriptions/${id}/reactivate`, {
+    const response = await fetch(`${API_URL}/subscriptions/${id}/reactivate`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,

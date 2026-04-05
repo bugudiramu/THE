@@ -8,6 +8,7 @@ import { formatShortDate } from "@/lib/utils";
 
 interface PickListItem {
   orderId: string;
+  orderType: string;
   sku: string;
   productName: string;
   qty: number;
@@ -168,8 +169,9 @@ export default function PickListPage() {
                           <td className="px-4 py-3 text-sm text-gray-600">
                             {formatShortDate(item.expiresAt)}
                           </td>
-                          <td className="px-4 py-3 text-sm font-mono text-gray-500">
-                            {item.orderId.slice(-8)}
+                          <td className="px-4 py-3">
+                            <p className="text-sm font-mono text-gray-500">{item.orderId.slice(-8)}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.orderType}</p>
                           </td>
                           <td className="px-4 py-3 text-sm font-bold text-gray-900">
                             {item.qty}

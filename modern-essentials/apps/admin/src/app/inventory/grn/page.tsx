@@ -13,6 +13,11 @@ interface Product {
   sku: string;
 }
 
+interface ProductResponse {
+  products: Product[];
+  total: number;
+}
+
 interface Farm {
   id: string;
   name: string;
@@ -28,7 +33,7 @@ export default function GrnPage() {
   const [formData, setFormData] = useState({
     productId: "",
     qty: 0,
-    expiresAt: "",
+    collectedAt: "",
     locationId: "",
     farmId: "",
     qtyCollected: 0,
@@ -38,10 +43,10 @@ export default function GrnPage() {
     async function fetchData() {
       try {
         const [productsData, farmsData] = await Promise.all([
-          apiGet<Product[]>("catalog/products"),
+          apiGet<ProductResponse>("products"), // Changed from catalog/products to products (API is mounted at /products)
           apiGet<Farm[]>("admin/inventory/farms"),
         ]);
-        setProducts(productsData);
+        setProducts(productsData.products);
         setFarms(farmsData);
       } catch (err) {
         console.error("Failed to load form data:", err);
@@ -56,7 +61,12 @@ export default function GrnPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await apiPost("admin/inventory/grn", formData);
+      // API expects collectedAt as ISO string
+      await apiPost("admin/inventory/grn", {
+        ...formData,
+        collectedAt: new Date(formData.collectedAt).toISOString(),
+        qtyCollected: formData.qtyCollected || formData.qty,
+      });
       router.push("/inventory");
       router.refresh();
     } catch (err) {
@@ -114,7 +124,7 @@ export default function GrnPage() {
                 </select>
               </div>
 
-              {/* Quantity and Expiry */}
+              {/* Quantity and Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -132,13 +142,13 @@ export default function GrnPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Expiry Date
+                    Collection Date
                   </label>
                   <input
                     type="date"
                     required
-                    value={formData.expiresAt}
-                    onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+                    value={formData.collectedAt}
+                    onChange={(e) => setFormData({ ...formData, collectedAt: e.target.value })}
                     className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                   />
                 </div>

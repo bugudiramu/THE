@@ -16,6 +16,8 @@ import {
   TrendingDown,
 } from "lucide-react";
 
+import { apiGet } from "@/lib/api";
+
 export const dynamic = "force-dynamic";
 
 export default function WastagePage() {
@@ -25,8 +27,8 @@ export default function WastagePage() {
   useEffect(() => {
     async function fetchLogs() {
       try {
-        const res = await fetch("/api/admin/inventory/wastage");
-        if (res.ok) setLogs(await res.json());
+        const data = await apiGet<IWastageLog[]>("admin/inventory/wastage");
+        setLogs(data);
       } catch (error) {
         console.error("Failed to fetch wastage logs:", error);
       } finally {

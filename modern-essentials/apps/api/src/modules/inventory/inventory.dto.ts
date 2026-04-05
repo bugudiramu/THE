@@ -32,6 +32,15 @@ export class CreateGrnDto {
 
   @IsString()
   @IsOptional()
+  locationId?: string;
+
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  qtyCollected?: number;
+
+  @IsString()
+  @IsOptional()
   notes?: string;
 }
 

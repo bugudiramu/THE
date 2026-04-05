@@ -328,6 +328,7 @@ export class OrdersService {
     // Build pick list: map each order item to the soonest-expiring batch
     const pickListItems: Array<{
       orderId: string;
+      orderType: string;
       sku: string;
       productName: string;
       qty: number;
@@ -348,6 +349,7 @@ export class OrdersService {
           const batch = matchingBatches[0];
           pickListItems.push({
             orderId: order.id,
+            orderType: order.type,
             sku: item.product.sku,
             productName: item.product.name,
             qty: item.qty,
@@ -359,6 +361,7 @@ export class OrdersService {
           // No batch available
           pickListItems.push({
             orderId: order.id,
+            orderType: order.type,
             sku: item.product.sku,
             productName: item.product.name,
             qty: item.qty,

@@ -20,10 +20,16 @@ interface ManifestOrder {
   type: string;
 }
 
+interface ManifestArea {
+  postalCode: string;
+  orders: ManifestOrder[];
+}
+
 interface ManifestResponse {
   generatedAt: string;
   orderCount: number;
-  orders: ManifestOrder[];
+  areaCount: number;
+  manifests: ManifestArea[];
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000";
@@ -78,15 +84,17 @@ export default function DispatchPage() {
     if (!data) return;
     setDispatchLoading("bulk");
     try {
-      for (const order of data.orders) {
-        await fetch(`${API_URL}/admin/orders/${order.orderId}/status`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer test-token",
-          },
-          body: JSON.stringify({ status: "DISPATCHED" }),
-        });
+      for (const area of data.manifests) {
+        for (const order of area.orders) {
+          await fetch(`${API_URL}/admin/orders/${order.orderId}/status`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer test-token",
+            },
+            body: JSON.stringify({ status: "DISPATCHED" }),
+          });
+        }
       }
       await fetchData();
     } catch (err) {
@@ -107,13 +115,13 @@ export default function DispatchPage() {
               Dispatch Manifest
             </h3>
             <p className="text-sm text-muted-foreground">
-              {data?.orderCount || 0} packed orders ready for dispatch
+              {data?.orderCount || 0} packed orders across {data?.areaCount || 0} areas
               {data?.generatedAt &&
                 ` · Generated ${new Date(data.generatedAt).toLocaleTimeString("en-IN")}`}
             </p>
           </div>
           <div className="no-print flex items-center gap-3">
-            {data && data.orders.length > 0 && (
+            {data && data.manifests && data.manifests.length > 0 && (
               <button
                 onClick={handleBulkDispatch}
                 disabled={dispatchLoading === "bulk"}
@@ -135,12 +143,12 @@ export default function DispatchPage() {
           </div>
         </div>
 
-        {/* Manifest table */}
+        {/* Manifest areas */}
         {loading ? (
           <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-500">
             Loading manifest...
           </div>
-        ) : !data || data.orders.length === 0 ? (
+        ) : !data || !data.manifests || data.manifests.length === 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-12 text-center">
             <Truck className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground">
@@ -151,89 +159,103 @@ export default function DispatchPage() {
             </p>
           </div>
         ) : (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden print:border-none print:shadow-none break-inside-avoid">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    #
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Order ID
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Items
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="no-print px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {data.orders.map((order, idx) => (
-                  <tr
-                    key={order.orderId}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {idx + 1}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-mono text-foreground">
-                      {order.orderId.slice(-8)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-sm text-foreground">
-                        {order.customerPhone}
-                      </p>
-                      {order.customerEmail && (
-                        <p className="text-xs text-muted-foreground">
-                          {order.customerEmail}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {order.items.map((i) => `${i.productName} ×${i.qty}`).join(", ")}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-foreground">
-                      {formatPrice(order.total)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          order.type === "SUBSCRIPTION_RENEWAL"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-secondary text-secondary-foreground"
-                        }`}
-                      >
-                        {order.type === "SUBSCRIPTION_RENEWAL"
-                          ? "Subscription"
-                          : "One-time"}
-                      </span>
-                    </td>
-                    <td className="no-print px-4 py-3">
-                      <button
-                        onClick={() => handleDispatch(order.orderId)}
-                        disabled={dispatchLoading === order.orderId}
-                        className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs font-medium text-orange-500 hover:bg-orange-500/20 transition-colors disabled:opacity-50"
-                      >
-                        {dispatchLoading === order.orderId
-                          ? "..."
-                          : "Dispatch"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-8">
+            {data.manifests.map((area) => (
+              <div key={area.postalCode} className="space-y-4 break-inside-avoid">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-gray-200"></div>
+                  <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3">
+                    Area: {area.postalCode} ({area.orders.length} orders)
+                  </h4>
+                  <div className="h-px flex-1 bg-gray-200"></div>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden print:border-none print:shadow-none">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          #
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Order ID
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Customer
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Items
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Total
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="no-print px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
+                      {area.orders.map((order, idx) => (
+                        <tr
+                          key={order.orderId}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {idx + 1}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-mono text-foreground">
+                            {order.orderId.slice(-8)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-sm text-foreground">
+                              {order.customerPhone}
+                            </p>
+                            {order.customerEmail && (
+                              <p className="text-xs text-muted-foreground">
+                                {order.customerEmail}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {order.items.map((i) => `${i.productName} ×${i.qty}`).join(", ")}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-foreground">
+                            {formatPrice(order.total)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                order.type === "SUBSCRIPTION_RENEWAL"
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-secondary text-secondary-foreground"
+                              }`}
+                            >
+                              {order.type === "SUBSCRIPTION_RENEWAL"
+                                ? "Subscription"
+                                : "One-time"}
+                            </span>
+                          </td>
+                          <td className="no-print px-4 py-3">
+                            <button
+                              onClick={() => handleDispatch(order.orderId)}
+                              disabled={dispatchLoading === order.orderId}
+                              className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs font-medium text-orange-500 hover:bg-orange-500/20 transition-colors disabled:opacity-50"
+                            >
+                              {dispatchLoading === order.orderId
+                                ? "..."
+                                : "Dispatch"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

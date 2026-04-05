@@ -107,6 +107,9 @@ export default async function OrdersPage({
                     Total
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -154,6 +157,17 @@ export default async function OrdersPage({
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-foreground">
                         {formatPrice(order.total)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            order.type === "SUBSCRIPTION_RENEWAL"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-secondary text-secondary-foreground"
+                          }`}
+                        >
+                          {order.type}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={order.status} />

@@ -45,14 +45,23 @@ export default function UserHeader() {
 
             <div className="flex items-center space-x-6">
               <CartButton />
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: "w-8 h-8 rounded-full ring-2 ring-primary/10 hover:ring-primary/30 transition-all",
-                    userButtonPopoverCard: "shadow-lg border rounded-xl",
-                  },
-                }}
-              />
+              {isSignedIn ? (
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 h-8 rounded-full ring-2 ring-primary/10 hover:ring-primary/30 transition-all",
+                      userButtonPopoverCard: "shadow-lg border rounded-xl",
+                    },
+                  }}
+                />
+              ) : (
+                <Link
+                  href="/sign-in"
+                  className="text-sm font-bold text-foreground bg-secondary hover:bg-secondary/80 px-4 py-2 rounded-full transition-colors"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
         </div>

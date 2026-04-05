@@ -3,7 +3,7 @@ import {
   Controller,
   Get,
   Param,
-  Patch,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -33,7 +33,7 @@ export class AdminSubscriptionController {
     );
   }
 
-  @Patch(":id/override")
+  @Post("override/:id")
   async override(
     @Req() req: any,
     @Param("id") id: string,
@@ -41,5 +41,10 @@ export class AdminSubscriptionController {
   ) {
     const adminId = req.user.id;
     return this.subscriptionService.adminOverride(id, overrideDto, adminId);
+  }
+
+  @Post("trigger-renewals")
+  async triggerRenewals() {
+    return this.subscriptionService.processRenewals();
   }
 }

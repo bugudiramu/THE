@@ -9,6 +9,13 @@ import {
   CardContent, 
   CardHeader, 
   Input,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+  Label,
 } from "@modern-essentials/ui";
 import { 
   Search, 
@@ -17,10 +24,11 @@ import {
   Package, 
   RefreshCw, 
   Calendar,
-  Pause,
+  Pause as PauseIcon,
   Play,
   XCircle,
-  Edit2
+  Edit2,
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -30,6 +38,21 @@ export default function AdminSubscriptionsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  // Override dialog state
+  const [overrideData, setOverrideData] = useState<{
+    isOpen: boolean;
+    subId: string;
+    action: string;
+    reason: string;
+    productName: string;
+  }>({
+    isOpen: false,
+    subId: "",
+    action: "",
+    reason: "",
+    productName: "",
+  });
 
   useEffect(() => {
     fetchSubscriptions();
@@ -49,13 +72,35 @@ export default function AdminSubscriptionsPage() {
     }
   };
 
-  const handleOverride = async (id: string, action: string, reason: string) => {
+  const handleOverrideSubmit = async () => {
+    if (!overrideData.reason) {
+      alert("Please provide a reason.");
+      return;
+    }
+
     try {
-      await apiPatch(`admin/subscriptions/${id}/override`, { action, reason });
+      setLoading(true);
+      await apiPatch(`admin/subscriptions/${overrideData.subId}/override`, { 
+        action: overrideData.action, 
+        reason: overrideData.reason 
+      });
+      setOverrideData({ ...overrideData, isOpen: false, reason: "" });
       fetchSubscriptions();
     } catch (err) {
       alert((err as Error).message);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const openOverrideDialog = (sub: any, action: string) => {
+    setOverrideData({
+      isOpen: true,
+      subId: sub.id,
+      action,
+      reason: "",
+      productName: sub.productName,
+    });
   };
 
   const filteredSubscriptions = subscriptions.filter(sub => 
@@ -66,6 +111,7 @@ export default function AdminSubscriptionsPage() {
 
   return (
     <div className="p-8 space-y-8">
+      {/* ... previous header ... */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Subscription Overrides</h1>
@@ -77,6 +123,7 @@ export default function AdminSubscriptionsPage() {
       </div>
 
       <Card>
+        {/* ... Card Header ... */}
         <CardHeader className="pb-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
@@ -110,7 +157,7 @@ export default function AdminSubscriptionsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {loading && subscriptions.length === 0 ? (
             <div className="py-20 text-center text-gray-500">Loading subscriptions...</div>
           ) : filteredSubscriptions.length === 0 ? (
             <div className="py-20 text-center text-gray-500">No subscriptions found matching your criteria.</div>
@@ -178,22 +225,16 @@ export default function AdminSubscriptionsPage() {
                               variant="ghost" 
                               size="sm" 
                               className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
-                              onClick={() => {
-                                const reason = window.prompt("Reason for pausing:");
-                                if (reason) handleOverride(sub.id, "PAUSE", reason);
-                              }}
+                              onClick={() => openOverrideDialog(sub, "PAUSE")}
                             >
-                              <Pause className="h-4 w-4" />
+                              <PauseIcon className="h-4 w-4" />
                             </Button>
                           ) : sub.status === "PAUSED" ? (
                             <Button 
                               variant="ghost" 
                               size="sm" 
                               className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => {
-                                const reason = window.prompt("Reason for resuming:");
-                                if (reason) handleOverride(sub.id, "RESUME", reason);
-                              }}
+                              onClick={() => openOverrideDialog(sub, "RESUME")}
                             >
                               <Play className="h-4 w-4" />
                             </Button>
@@ -203,10 +244,7 @@ export default function AdminSubscriptionsPage() {
                             variant="ghost" 
                             size="sm" 
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => {
-                              const reason = window.prompt("Reason for cancellation:");
-                              if (reason) handleOverride(sub.id, "CANCEL", reason);
-                            }}
+                            onClick={() => openOverrideDialog(sub, "CANCEL")}
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>
@@ -228,6 +266,56 @@ export default function AdminSubscriptionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Override Dialog */}
+      <Dialog open={overrideData.isOpen} onOpenChange={(open) => setOverrideData({ ...overrideData, isOpen: open })}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="h-6 w-6 text-orange-600" />
+            </div>
+            <DialogTitle className="text-xl font-bold">
+              {overrideData.action === "PAUSE" ? "Pause Subscription" : 
+               overrideData.action === "RESUME" ? "Resume Subscription" : 
+               "Cancel Subscription"}
+            </DialogTitle>
+            <DialogDescription>
+              Confirm administrative override for <strong>{overrideData.productName}</strong>. 
+              This will directly affect the customer's delivery schedule.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="reason" className="text-sm font-semibold">Reason for {overrideData.action.toLowerCase()}ing</Label>
+              <Input
+                id="reason"
+                placeholder="e.g. Requested by customer via WhatsApp"
+                value={overrideData.reason}
+                onChange={(e) => setOverrideData({ ...overrideData, reason: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setOverrideData({ ...overrideData, isOpen: false })} disabled={loading}>
+              Discard
+            </Button>
+            <Button 
+              className={
+                overrideData.action === "CANCEL" ? "bg-red-600 hover:bg-red-700 text-white" : 
+                overrideData.action === "PAUSE" ? "bg-orange-500 hover:bg-orange-600 text-white" :
+                "bg-green-600 hover:bg-green-700 text-white"
+              }
+              onClick={handleOverrideSubmit}
+              disabled={loading || !overrideData.reason}
+            >
+              {loading ? "Processing..." : `Confirm ${overrideData.action}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

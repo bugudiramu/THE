@@ -10,12 +10,13 @@ import { useSearchParams } from "next/navigation";
 interface Batch {
   id: string;
   productId: string;
+  sku: string;
+  productName: string;
   qty: number;
   receivedAt: string;
   expiresAt: string;
   status: string;
   qcStatus: string;
-  product: { name: string; sku: string };
 }
 
 function QcLogContent() {
@@ -42,10 +43,10 @@ function QcLogContent() {
     fetchData();
   }, []);
 
-  const handleUpdateStatus = async (batchId: string, status: string) => {
+  const handleUpdateStatus = async (batchId: string, qcStatus: string) => {
     setUpdating(batchId);
     try {
-      await apiPatch(`admin/inventory/batches/${batchId}/qc`, { status });
+      await apiPatch(`admin/inventory/batches/${batchId}/qc`, { qcStatus });
       await fetchData();
     } catch (err) {
       console.error("Failed to update QC status:", err);
@@ -122,9 +123,9 @@ function QcLogContent() {
                       }`} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900">{batch.product.name}</h4>
+                      <h4 className="font-bold text-gray-900">{batch.productName}</h4>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-gray-500">
-                        <span className="font-mono uppercase">SKU: {batch.product.sku}</span>
+                        <span className="font-mono uppercase">SKU: {batch.sku}</span>
                         <span className="font-mono uppercase text-gray-400">BATCH: {batch.id.slice(-8)}</span>
                         <span>QTY: <strong className="text-gray-900">{batch.qty}</strong></span>
                         <span>EXPIRES: <strong className="text-gray-900">{formatShortDate(batch.expiresAt)}</strong></span>
