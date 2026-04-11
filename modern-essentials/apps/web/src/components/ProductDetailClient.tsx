@@ -1,7 +1,8 @@
 "use client";
 
 import { useCart } from "@/contexts/CartContext";
-import { Button, Separator } from "@modern-essentials/ui";
+import { Button, FreshnessGauge } from "@modern-essentials/ui";
+import { Leaf, Minus, Plus, Check } from "lucide-react";
 import { useState } from "react";
 import SubscriptionToggle from "./SubscriptionToggle";
 
@@ -34,13 +35,13 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
       {/* Product Images Area */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {product.images && product.images.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {product.images.map((image: any) => (
               <div
                 key={image.url}
-                className="aspect-square overflow-hidden rounded-2xl bg-muted/20 border"
+                className="aspect-square overflow-hidden rounded-3xl bg-surface-container-low"
               >
                 <img
                   src={image.url}
@@ -51,28 +52,34 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             ))}
           </div>
         ) : (
-          <div className="aspect-square rounded-2xl bg-muted/20 border flex items-center justify-center">
-            <span className="text-muted-foreground text-sm">No Image</span>
+          <div className="aspect-square rounded-3xl bg-surface-container-low flex items-center justify-center">
+            <span className="text-on-surface-variant text-sm font-body">No Image</span>
           </div>
         )}
       </div>
 
       {/* Product Info & Action Area */}
       <div className="flex flex-col">
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground mb-4">
-          {product.name}
-        </h1>
+        <div className="mb-6">
+          <FreshnessGauge 
+            icon={<Leaf />} 
+            label="Farm Fresh Direct" 
+            className="mb-4"
+          />
+          
+          <h1 className="text-4xl sm:text-5xl font-headline text-on-surface mb-6 leading-tight">
+            {product.name}
+          </h1>
 
-        <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-          {product.description ||
-            "Farm fresh directly to your doorstep. Perfect for daily consumption, packed with extreme care and zero compromises."}
-        </p>
-
-        <Separator className="mt-2 mb-8" />
+          <p className="text-lg text-on-surface-variant leading-relaxed mb-8 font-body">
+            {product.description ||
+              "Farm fresh directly to your doorstep. Perfect for daily consumption, packed with extreme care and zero compromises."}
+          </p>
+        </div>
 
         {/* Pricing / Plan Selection */}
-        <div className="bg-muted/10 border border-muted/50 rounded-2xl p-6 md:p-8 shadow-sm">
-          <h2 className="text-lg font-bold text-foreground mb-6">
+        <div className="bg-surface-container-low rounded-3xl p-8 md:p-10">
+          <h2 className="text-[10px] uppercase tracking-widest font-bold text-on-surface mb-8">
             Choose Your Plan
           </h2>
 
@@ -82,29 +89,29 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             onSubscriptionChange={handleSubscriptionChange}
           />
 
-          <Separator className="my-8" />
+          <div className="my-10 h-px bg-on-surface/5" />
 
           {/* Action Buttons */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold text-foreground">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs uppercase tracking-widest font-bold text-on-surface">
                 Quantity
               </span>
-              <div className="flex items-center space-x-4 border rounded-lg px-2 py-1">
+              <div className="flex items-center space-x-6 bg-surface rounded-full px-4 py-2">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors"
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-high text-on-surface transition-colors"
                 >
-                  -
+                  <Minus className="w-4 h-4" />
                 </button>
-                <span className="w-8 text-center font-bold text-foreground">
+                <span className="w-4 text-center font-bold text-on-surface font-body">
                   {quantity}
                 </span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors"
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-high text-on-surface transition-colors"
                 >
-                  +
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -112,26 +119,13 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             <Button
               onClick={handleAddToCart}
               size="lg"
-              className="w-full text-base font-bold tracking-wide h-14 text-white"
+              className="w-full text-xs uppercase tracking-widest font-bold h-16 bg-secondary hover:opacity-90 text-white rounded-full transition-all active:scale-[0.98]"
             >
               {isSubscription ? "Subscribe Now" : "Add to Cart"}
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground flex items-center justify-center pt-2">
-              <svg
-                className="w-4 h-4 mr-1.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-center text-on-surface-variant flex items-center justify-center pt-4 opacity-60">
+              <Check className="w-3 h-3 mr-2" />
               No commitments. Cancel or pause anytime.
             </p>
           </div>

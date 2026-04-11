@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Space_Grotesk } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
 
-const inter = Inter({ subsets: ["latin"] });
+const spaceGrotesk = Space_Grotesk({ 
+  subsets: ["latin"], 
+  display: "swap",
+  variable: "--font-sans" 
+});
+
+const fraunces = Fraunces({ 
+  subsets: ["latin"], 
+  weight: ["400", "700", "800"],
+  display: "swap",
+  variable: "--font-serif" 
+});
 
 export const metadata: Metadata = {
   title: "Modern Essentials Admin",
@@ -18,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }): JSX.Element {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} flex h-screen overflow-hidden`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${fraunces.variable}`}>
+      <body className="font-sans flex h-screen overflow-hidden bg-surface text-foreground">
         <Sidebar />
         <main className="flex-1 overflow-auto">{children}</main>
       </body>

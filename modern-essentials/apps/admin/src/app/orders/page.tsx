@@ -84,48 +84,48 @@ export default async function OrdersPage({
   ]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-surface">
       <Header title="Today's Orders" />
-      <div className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 p-6 space-y-8 max-w-7xl mx-auto w-full">
         <OrderFilterTabs counts={counts} total={total} />
 
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-2xl bg-surface-container-low overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="w-full border-separate border-spacing-0">
+              <thead className="bg-surface-container-high/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Order ID
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Customer
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Items
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Total
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Type
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Placed At
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Action
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="bg-surface-container-low/30">
                 {orders.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
-                      className="px-4 py-12 text-center text-muted-foreground"
+                      colSpan={8}
+                      className="px-6 py-20 text-center text-muted-foreground italic font-medium"
                     >
                       No orders found for today
                       {status && status !== "ALL" ? ` with status "${status}"` : ""}.
@@ -135,47 +135,47 @@ export default async function OrdersPage({
                   orders.map((order) => (
                     <tr
                       key={order.id}
-                      className="hover:bg-muted/30 transition-colors"
+                      className="hover:bg-surface-container-low transition-all duration-200 group"
                     >
-                      <td className="px-4 py-3 text-sm font-mono text-foreground">
+                      <td className="px-6 py-6 text-sm font-mono font-medium text-foreground">
                         {order.id.slice(-8)}
                       </td>
-                      <td className="px-4 py-3">
-                        <p className="text-sm text-foreground">
+                      <td className="px-6 py-6">
+                        <p className="text-sm font-bold text-foreground">
                           {order.user.phone}
                         </p>
                         {order.user.email && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             {order.user.email}
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                      <td className="px-6 py-6 text-sm text-muted-foreground max-w-xs truncate">
                         {order.items
                           .map((i) => `${i.product.name} ×${i.qty}`)
                           .join(", ")}
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium text-foreground">
+                      <td className="px-6 py-6 text-sm font-bold text-foreground">
                         {formatPrice(order.total)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-6">
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
                             order.type === "SUBSCRIPTION_RENEWAL"
                               ? "bg-primary/10 text-primary"
                               : "bg-secondary text-secondary-foreground"
                           }`}
                         >
-                          {order.type}
+                          {order.type === "SUBSCRIPTION_RENEWAL" ? "SUBSCRIPTION" : "ONE-TIME"}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-6">
                         <StatusBadge status={order.status} />
                       </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                      <td className="px-6 py-6 text-sm text-muted-foreground">
                         {formatDate(order.placedAt.toISOString())}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-6">
                         <OrderAction
                           orderId={order.id}
                           currentStatus={order.status}

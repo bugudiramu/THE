@@ -3,16 +3,10 @@
 import { useUser, useAuth } from "@clerk/nextjs";
 import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Input,
   Label,
-  Separator,
 } from "@modern-essentials/ui";
-import { ArrowRight, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { ArrowRight, ShieldCheck, ShoppingBag } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useCart } from "../../contexts/CartContext";
@@ -256,241 +250,236 @@ function CheckoutContent() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 py-12 pb-24 border-t">
+    <div className="min-h-screen bg-surface py-16 pb-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8 md:mb-12">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-            Secure Checkout
-          </h1>
-          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground font-medium bg-background px-4 py-2 border rounded-full shadow-sm">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            SSL Encrypted Transaction
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div className="space-y-2">
+            <p className="text-[#3AAFA9] font-sans font-bold tracking-[0.2em] text-xs uppercase">Secure Checkout</p>
+            <h1 className="text-4xl md:text-5xl font-headline tracking-tight text-foreground">
+              Finalize Your Selection
+            </h1>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground font-sans tracking-wider uppercase bg-surface-container-high px-5 py-3 rounded-none">
+            <ShieldCheck className="w-4 h-4 text-[#3AAFA9]" />
+            Encrypted & Secure
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-16">
           {/* Checkout Form */}
-          <div className="xl:col-span-7 space-y-6">
-            <Card className="shadow-sm border-muted">
-              <CardHeader className="bg-muted/30 border-b pb-6">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Truck className="w-5 h-5" />
-                  Delivery Information
-                </CardTitle>
-                <CardDescription>
-                  Enter details on where we should drop your essentials.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-8">
-                <form
-                  id="checkout-form"
-                  onSubmit={handleSubmit}
-                  className="space-y-6"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        required
-                        className="h-12 bg-background"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        required
-                        className="h-12 bg-background"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        className="h-12 bg-background"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        required
-                        className="h-12 bg-background"
-                      />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <Label htmlFor="addressLine1">Street Address</Label>
+          <div className="xl:col-span-7 space-y-12">
+            <section className="space-y-8">
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#3AAFA9] text-white flex items-center justify-center font-headline text-sm">1</span>
+                <h2 className="text-2xl font-headline text-foreground">Delivery Information</h2>
+              </div>
+              
+              <form
+                id="checkout-form"
+                onSubmit={handleSubmit}
+                className="space-y-10"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="firstName" className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">First Name</Label>
                     <Input
-                      id="addressLine1"
-                      name="addressLine1"
-                      value={formData.addressLine1}
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
                       onChange={handleInputChange}
                       required
-                      className="h-12 bg-background"
-                      placeholder="123 Farm Lane, Apt 4"
+                      className="h-10 bg-transparent border-0 border-b border-outline-variant/40 focus-visible:border-[#3AAFA9] focus-visible:ring-0 rounded-none px-0 transition-colors placeholder:text-muted-foreground/30"
                     />
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div className="sm:col-span-1 space-y-2">
-                      <Label htmlFor="postalCode">Postal / VIP Code</Label>
-                      <Input
-                        id="postalCode"
-                        name="postalCode"
-                        value={formData.postalCode}
-                        onChange={handleInputChange}
-                        required
-                        className="h-12 bg-background"
-                      />
-                    </div>
-                    <div className="sm:col-span-1 space-y-2">
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        required
-                        className="h-12 bg-background"
-                      />
-                    </div>
-                    <div className="sm:col-span-1 space-y-2">
-                      <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                        required
-                        className="h-12 bg-background"
-                      />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lastName" className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      required
+                      className="h-10 bg-transparent border-0 border-b border-outline-variant/40 focus-visible:border-[#3AAFA9] focus-visible:ring-0 rounded-none px-0 transition-colors placeholder:text-muted-foreground/30"
+                    />
                   </div>
+                </div>
 
-                  {error && (
-                    <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 shrink-0" />
-                      {error}
-                    </div>
-                  )}
-                </form>
-              </CardContent>
-            </Card>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      className="h-10 bg-transparent border-0 border-b border-outline-variant/40 focus-visible:border-[#3AAFA9] focus-visible:ring-0 rounded-none px-0 transition-colors placeholder:text-muted-foreground/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                      className="h-10 bg-transparent border-0 border-b border-outline-variant/40 focus-visible:border-[#3AAFA9] focus-visible:ring-0 rounded-none px-0 transition-colors placeholder:text-muted-foreground/30"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-4">
+                  <Label htmlFor="addressLine1" className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Street Address</Label>
+                  <Input
+                    id="addressLine1"
+                    name="addressLine1"
+                    value={formData.addressLine1}
+                    onChange={handleInputChange}
+                    required
+                    className="h-10 bg-transparent border-0 border-b border-outline-variant/40 focus-visible:border-[#3AAFA9] focus-visible:ring-0 rounded-none px-0 transition-colors placeholder:text-muted-foreground/30"
+                    placeholder="123 Farm Lane, Apt 4"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-8">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="postalCode" className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Postal Code</Label>
+                    <Input
+                      id="postalCode"
+                      name="postalCode"
+                      value={formData.postalCode}
+                      onChange={handleInputChange}
+                      required
+                      className="h-10 bg-transparent border-0 border-b border-outline-variant/40 focus-visible:border-[#3AAFA9] focus-visible:ring-0 rounded-none px-0 transition-colors placeholder:text-muted-foreground/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="city" className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">City</Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      required
+                      className="h-10 bg-transparent border-0 border-b border-outline-variant/40 focus-visible:border-[#3AAFA9] focus-visible:ring-0 rounded-none px-0 transition-colors placeholder:text-muted-foreground/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="state" className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">State</Label>
+                    <Input
+                      id="state"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      required
+                      className="h-10 bg-transparent border-0 border-b border-outline-variant/40 focus-visible:border-[#3AAFA9] focus-visible:ring-0 rounded-none px-0 transition-colors placeholder:text-muted-foreground/30"
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="p-5 bg-destructive/5 border-l-2 border-destructive text-destructive text-sm font-sans flex items-center gap-3">
+                    <ShieldCheck className="w-5 h-5 shrink-0" />
+                    {error}
+                  </div>
+                )}
+              </form>
+            </section>
           </div>
 
-          {/* Order Summary & Finalize */}
+          {/* Order Summary & Finalize - Tonal Layering */}
           <div className="xl:col-span-5">
-            <Card className="shadow-sm border-muted sticky top-24">
-              <CardHeader className="bg-muted/30 border-b pb-6">
-                <CardTitle className="text-xl">
-                  {isSubscription ? "Subscription Plan" : "Order Summary"}
-                </CardTitle>
-                <CardDescription>
-                  {totalItems} fresh items in your cart.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-5">
-                  {items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex justify-between items-start group"
-                    >
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-12 h-12 bg-muted rounded-md border overflow-hidden">
-                          {item.product.images.length > 0 && (
-                            <img
-                              src={item.product.images[0].url}
-                              className="w-full h-full object-cover"
-                              alt=""
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-sm text-foreground leading-tight">
-                            {item.product.name}
-                          </h3>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Qty {item.quantity}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="font-semibold text-sm text-foreground whitespace-nowrap pt-1">
-                        Rs.{" "}
-                        {((item.priceSnapshot * item.quantity) / 100).toFixed(
-                          2,
+            <div className="bg-surface-container-low p-8 md:p-10 sticky top-24 space-y-8">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-headline text-foreground">
+                  {isSubscription ? "Your Plan" : "Summary"}
+                </h2>
+                <p className="text-xs text-muted-foreground font-sans tracking-wider uppercase">
+                  {totalItems} items selected
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between items-start"
+                  >
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0 w-16 h-16 bg-surface-container-high overflow-hidden">
+                        {item.product.images.length > 0 && (
+                          <img
+                            src={item.product.images[0].url}
+                            className="w-full h-full object-cover grayscale-[0.2] hover:grayscale-0 transition-all duration-500"
+                            alt=""
+                          />
                         )}
-                      </p>
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="font-headline text-base text-foreground leading-tight">
+                          {item.product.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground font-sans">
+                          Quantity: {item.quantity}
+                        </p>
+                      </div>
                     </div>
-                  ))}
-
-                  <Separator className="mt-2" />
-
-                  <div className="space-y-3 pt-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium text-foreground">
-                        Rs. {(totalAmount / 100).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Premium Shipping
-                      </span>
-                      <span className="font-medium text-emerald-600">
-                        Calculated
-                      </span>
-                    </div>
+                    <p className="font-headline text-base text-foreground whitespace-nowrap pt-1">
+                      Rs.{" "}
+                      {((item.priceSnapshot * item.quantity) / 100).toFixed(
+                        2,
+                      )}
+                    </p>
                   </div>
+                ))}
 
-                  <Separator />
-
-                  <div className="flex justify-between items-center py-2">
-                    <span className="font-extrabold text-foreground text-lg">
-                      Total
-                    </span>
-                    <span className="font-black text-2xl tracking-tight text-foreground">
+                <div className="pt-6 space-y-4 border-t border-outline-variant/20">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground font-sans">Subtotal</span>
+                    <span className="font-headline text-foreground">
                       Rs. {(totalAmount / 100).toFixed(2)}
                     </span>
                   </div>
-                  <Button
-                    type="submit"
-                    form="checkout-form"
-                    disabled={loading}
-                    size="lg"
-                    className="w-full text-base font-bold tracking-wide h-14 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 text-white"
-                  >
-                    {loading
-                      ? "Initializing Secure Gateway..."
-                      : "Complete Order"}
-                    {!loading && <ArrowRight className="w-5 h-5 ml-2" />}
-                  </Button>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground font-sans">
+                      Shipping
+                    </span>
+                    <span className="font-sans font-bold text-[#3AAFA9] tracking-widest text-[10px] uppercase">
+                      Complimentary
+                    </span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+
+                <div className="flex justify-between items-center pt-6 border-t border-outline-variant/20">
+                  <span className="font-headline text-foreground text-xl">
+                    Total
+                  </span>
+                  <span className="font-headline text-3xl tracking-tight text-foreground">
+                    Rs. {(totalAmount / 100).toFixed(2)}
+                  </span>
+                </div>
+                
+                <Button
+                  type="submit"
+                  form="checkout-form"
+                  disabled={loading}
+                  size="lg"
+                  className="w-full text-sm font-bold tracking-[0.2em] uppercase h-16 bg-[#3AAFA9] hover:bg-[#2d8a7c] text-white rounded-none transition-all duration-300"
+                >
+                  {loading
+                    ? "Authenticating Gateway..."
+                    : "Complete Purchase"}
+                  {!loading && <ArrowRight className="w-4 h-4 ml-3" />}
+                </Button>
+                
+                <p className="text-[10px] text-center text-muted-foreground font-sans uppercase tracking-[0.1em] mt-4">
+                  By completing your purchase, you agree to our Terms of Curation.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

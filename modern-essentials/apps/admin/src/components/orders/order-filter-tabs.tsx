@@ -24,25 +24,27 @@ export function OrderFilterTabs({ counts, total }: OrderFilterTabsProps) {
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 py-4">
       {STATUS_FILTERS.map((s) => (
         <button
           key={s}
           onClick={() => setFilter(s)}
-          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`rounded-full px-5 py-2 text-xs font-medium transition-all duration-200 ${
             currentFilter === s
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-secondary-foreground hover:bg-accent"
+              ? "bg-[#3AAFA9] text-[#ffffff] shadow-sm"
+              : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
           }`}
         >
           {s.replace(/_/g, " ")}
           {s !== "ALL" && (
-            <span className="ml-1.5 opacity-70">
+            <span className={`ml-1.5 opacity-80 ${currentFilter === s ? "text-[#ffffff]/80" : "text-on-surface-variant/70"}`}>
               ({counts[s] || 0})
             </span>
           )}
           {s === "ALL" && (
-            <span className="ml-1.5 opacity-70">({total})</span>
+            <span className={`ml-1.5 opacity-80 ${currentFilter === s ? "text-[#ffffff]/80" : "text-on-surface-variant/70"}`}>
+              ({total})
+            </span>
           )}
         </button>
       ))}

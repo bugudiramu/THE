@@ -89,35 +89,40 @@ export default function GrnPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      <Header title="Record Goods Receipt Note (GRN)" />
+    <div className="flex flex-col min-h-screen bg-surface">
+      <Header title="Inventory: Goods Receipt" />
       
-      <div className="flex-1 p-6 max-w-2xl mx-auto w-full">
+      <div className="flex-1 p-8 lg:p-12 max-w-4xl mx-auto w-full">
         <Link
           href="/inventory"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+          className="inline-flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface mb-10 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Inventory
+          Return to Inventory
         </Link>
 
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
+        <div className="bg-surface-container-low rounded-[2rem] p-10 lg:p-14">
+          <div className="mb-12">
+            <h3 className="text-3xl font-headline font-bold text-on-surface">Record GRN</h3>
+            <p className="text-on-surface-variant/70 mt-2 font-body">Log received stock and maintain farm traceability.</p>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-12">
+            <div className="grid grid-cols-1 gap-10">
               {/* Product Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
                   Product / SKU
                 </label>
                 <select
                   required
                   value={formData.productId}
                   onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                  className="w-full bg-surface-container-high/50 border-0 rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#3AAFA9]/20 transition-all text-on-surface text-lg appearance-none cursor-pointer"
                 >
-                  <option value="">Select a product...</option>
+                  <option value="" className="bg-surface">Select a product...</option>
                   {products.map((p) => (
-                    <option key={p.id} value={p.id}>
+                    <option key={p.id} value={p.id} className="bg-surface text-base">
                       {p.name} ({p.sku})
                     </option>
                   ))}
@@ -125,9 +130,9 @@ export default function GrnPage() {
               </div>
 
               {/* Quantity and Date */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
                     Received Quantity
                   </label>
                   <input
@@ -136,12 +141,12 @@ export default function GrnPage() {
                     min="1"
                     value={formData.qty || ""}
                     onChange={(e) => setFormData({ ...formData, qty: parseInt(e.target.value) })}
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-                    placeholder="e.g. 500"
+                    className="w-full bg-surface-container-high/50 border-0 rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#3AAFA9]/20 transition-all text-on-surface text-lg"
+                    placeholder="0"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
                     Collection Date
                   </label>
                   <input
@@ -149,76 +154,76 @@ export default function GrnPage() {
                     required
                     value={formData.collectedAt}
                     onChange={(e) => setFormData({ ...formData, collectedAt: e.target.value })}
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    className="w-full bg-surface-container-high/50 border-0 rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#3AAFA9]/20 transition-all text-on-surface text-lg appearance-none cursor-pointer"
                   />
                 </div>
               </div>
 
               {/* Warehouse Location */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
                   Warehouse Location (Bin)
                 </label>
                 <input
                   type="text"
                   value={formData.locationId}
                   onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                  className="w-full bg-surface-container-high/50 border-0 rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#3AAFA9]/20 transition-all text-on-surface text-lg"
                   placeholder="e.g. A-12-04"
                 />
               </div>
 
-              <hr className="my-2 border-gray-100" />
-
               {/* Farm Traceability (Optional) */}
-              <div className="bg-gray-50 -mx-6 px-6 py-4 border-y border-gray-100">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-                  Farm Traceability (Optional)
-                </h4>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Origin Farm
-                    </label>
-                    <select
-                      value={formData.farmId}
-                      onChange={(e) => setFormData({ ...formData, farmId: e.target.value })}
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-                    >
-                      <option value="">Unknown / Skip</option>
-                      {farms.map((f) => (
-                        <option key={f.id} value={f.id}>{f.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Qty Collected from Farm
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.qtyCollected || ""}
-                      onChange={(e) => setFormData({ ...formData, qtyCollected: parseInt(e.target.value) })}
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-                      placeholder="Defaults to received qty"
-                    />
+              <div className="pt-6">
+                <div className="bg-surface-container-high/30 rounded-2xl p-8">
+                  <h4 className="text-[10px] font-black text-[#3AAFA9] uppercase tracking-[0.2em] mb-8">
+                    Farm Traceability (Optional)
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-black text-on-surface-variant uppercase tracking-[0.15em]">
+                        Origin Farm
+                      </label>
+                      <select
+                        value={formData.farmId}
+                        onChange={(e) => setFormData({ ...formData, farmId: e.target.value })}
+                        className="w-full bg-surface-container-low border-0 rounded-xl py-2 px-3 focus:ring-2 focus:ring-[#3AAFA9]/20 transition-all text-on-surface text-base appearance-none cursor-pointer"
+                      >
+                        <option value="" className="bg-surface">Unknown / Skip</option>
+                        {farms.map((f) => (
+                          <option key={f.id} value={f.id} className="bg-surface">{f.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-black text-on-surface-variant uppercase tracking-[0.15em]">
+                        Qty Collected
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.qtyCollected || ""}
+                        onChange={(e) => setFormData({ ...formData, qtyCollected: parseInt(e.target.value) })}
+                        className="w-full bg-surface-container-low border-0 rounded-xl py-2 px-3 focus:ring-2 focus:ring-[#3AAFA9]/20 transition-all text-on-surface text-base"
+                        placeholder="Same as received"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-8">
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 rounded-full bg-[#2B7A78] px-10 py-4 text-sm font-black uppercase tracking-widest text-[#ffffff] hover:bg-[#2B7A78]/90 transition-all disabled:opacity-50"
               >
                 {submitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Save className="h-4 w-4" />
+                  <Save className="h-5 w-5" />
                 )}
-                Save Batch
+                Save Batch Entry
               </button>
             </div>
           </form>

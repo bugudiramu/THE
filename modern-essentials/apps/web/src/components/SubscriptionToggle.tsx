@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, RadioGroup, RadioGroupItem, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from "@modern-essentials/ui";
+import { RadioGroup, RadioGroupItem, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from "@modern-essentials/ui";
 interface SubscriptionToggleProps {
   price: number;
   subPrice?: number;
@@ -41,64 +41,60 @@ export default function SubscriptionToggle({
         {/* Subscribe & Save Option */}
         <Label
           htmlFor="subscribe"
-          className="cursor-pointer [&:has([data-state=checked])>div]:border-primary [&:has([data-state=checked])>div]:bg-primary/5"
+          className="cursor-pointer"
         >
-          <Card className="relative border-2 transition-all hover:border-primary/50 shadow-sm border-muted h-32">
-            <CardContent className="p-4 flex flex-col h-full justify-between items-start">
+          <div className={`relative transition-all h-36 rounded-3xl p-6 flex flex-col justify-between items-start ${isSubscription === "true" ? "bg-surface shadow-sm" : "bg-surface/30 opacity-70 hover:opacity-100"}`}>
                <div className="flex w-full justify-between items-start mb-2">
                  <RadioGroupItem value="true" id="subscribe" className="sr-only" />
-                 <div className="w-5 h-5 rounded-full border border-primary flex items-center justify-center">
-                   {isSubscription === "true" && <div className="w-2.5 h-2.5 bg-primary rounded-full"></div>}
+                 <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isSubscription === "true" ? "border-secondary" : "border-on-surface/20"}`}>
+                   {isSubscription === "true" && <div className="w-3 h-3 bg-secondary rounded-full"></div>}
                  </div>
-                 <Badge variant="outline" className="border-primary text-primary font-medium bg-background">Save {calculateSavings()}%</Badge>
+                 <Badge className="bg-secondary text-white font-bold text-[10px] uppercase tracking-widest border-none">Save {calculateSavings()}%</Badge>
                </div>
-               <div className="mt-2">
-                 <p className="font-semibold text-sm mb-1 text-foreground">Subscribe & Save</p>
-                 <p className="text-xl font-bold tracking-tight text-foreground">
+               <div className="mt-auto">
+                 <p className="font-bold text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Subscribe & Save</p>
+                 <p className="text-xl font-bold tracking-tight text-on-surface font-body">
                    Rs. {subPrice ? (subPrice / 100).toFixed(2) : (price / 100).toFixed(2)}
-                   <span className="text-xs font-normal text-muted-foreground ml-2 line-through">Rs. {(price / 100).toFixed(2)}</span>
+                   <span className="text-xs font-normal text-on-surface-variant ml-2 line-through opacity-50">Rs. {(price / 100).toFixed(2)}</span>
                  </p>
                </div>
-            </CardContent>
-          </Card>
+          </div>
         </Label>
 
         {/* One-time Purchase Option */}
         <Label
           htmlFor="onetime"
-          className="cursor-pointer [&:has([data-state=checked])>div]:border-primary [&:has([data-state=checked])>div]:bg-primary/5"
+          className="cursor-pointer"
         >
-          <Card className="relative border-2 transition-all hover:border-primary/50 shadow-sm border-muted h-32">
-            <CardContent className="p-4 flex flex-col h-full justify-between items-start">
+          <div className={`relative transition-all h-36 rounded-3xl p-6 flex flex-col justify-between items-start ${isSubscription === "false" ? "bg-surface shadow-sm" : "bg-surface/30 opacity-70 hover:opacity-100"}`}>
                <div className="flex w-full justify-between items-start mb-2">
                  <RadioGroupItem value="false" id="onetime" className="sr-only" />
-                 <div className="w-5 h-5 rounded-full border border-primary flex items-center justify-center">
-                   {isSubscription === "false" && <div className="w-2.5 h-2.5 bg-primary rounded-full"></div>}
+                 <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isSubscription === "false" ? "border-secondary" : "border-on-surface/20"}`}>
+                   {isSubscription === "false" && <div className="w-3 h-3 bg-secondary rounded-full"></div>}
                  </div>
                </div>
-               <div className="mt-2 text-left">
-                 <p className="font-medium text-sm mb-1 text-foreground">One-time Purchase</p>
-                 <p className="text-xl font-bold tracking-tight text-foreground">
+               <div className="mt-auto text-left">
+                 <p className="font-bold text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">One-time Purchase</p>
+                 <p className="text-xl font-bold tracking-tight text-on-surface font-body">
                    Rs. {(price / 100).toFixed(2)}
                  </p>
                </div>
-            </CardContent>
-          </Card>
+          </div>
         </Label>
       </RadioGroup>
 
       {/* Frequency Selector */}
       {isSubscription === "true" && (
-        <div className="flex items-center space-x-4 bg-muted/30 p-4 rounded-lg border border-muted shadow-sm animate-in fade-in slide-in-from-top-2">
-          <Label className="text-sm font-semibold text-foreground whitespace-nowrap">Deliver every:</Label>
+        <div className="flex items-center space-x-6 bg-surface/50 p-6 rounded-3xl animate-in fade-in slide-in-from-top-2">
+          <Label className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant whitespace-nowrap">Deliver every:</Label>
           <Select value={frequency} onValueChange={handleFrequencyChange}>
-            <SelectTrigger className="w-full bg-background border-muted hover:border-primary/30 transition-colors">
+            <SelectTrigger className="w-full bg-surface border-none rounded-full h-12 px-6 font-bold text-xs uppercase tracking-widest shadow-sm">
               <SelectValue placeholder="Select frequency" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="WEEKLY">Weekly</SelectItem>
-              <SelectItem value="FORTNIGHTLY">Fortnightly (Save 12%)</SelectItem>
-              <SelectItem value="MONTHLY">Monthly (Save 15%)</SelectItem>
+            <SelectContent className="rounded-2xl border-none shadow-xl">
+              <SelectItem value="WEEKLY" className="text-xs uppercase tracking-widest font-bold">Weekly</SelectItem>
+              <SelectItem value="FORTNIGHTLY" className="text-xs uppercase tracking-widest font-bold">Fortnightly</SelectItem>
+              <SelectItem value="MONTHLY" className="text-xs uppercase tracking-widest font-bold">Monthly</SelectItem>
             </SelectContent>
           </Select>
         </div>

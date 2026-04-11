@@ -31,15 +31,15 @@ export default async function ProductsPage({
   const products = await getProducts(searchParams.category);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-surface py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10 text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
+        <div className="mb-16 text-center">
+          <h1 className="text-4xl md:text-5xl font-headline text-on-surface mb-4">
             Our Fresh Essentials
           </h1>
           {searchParams.category && (
-            <p className="text-gray-600 font-medium bg-white inline-block px-4 py-1 rounded-full border">
-              Showing: {searchParams.category.replace("_", " ")}
+            <p className="text-on-surface-variant font-body bg-surface-container-low inline-block px-4 py-1.5 rounded-full uppercase tracking-widest text-xs font-bold">
+              {searchParams.category.replace("_", " ")}
             </p>
           )}
         </div>

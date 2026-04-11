@@ -8,3 +8,4 @@ export * from "./components/ui/radio-group";
 export * from "./components/ui/select";
 export * from "./components/ui/separator";
 export * from "./components/ui/dialog";
+export * from "./components/ui/freshness-gauge";

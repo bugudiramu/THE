@@ -35,22 +35,22 @@ export default async function ProductDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+    <div className="min-h-screen bg-surface text-on-surface pb-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         {/* Breadcrumb */}
-        <nav className="flex mb-8 text-sm" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2 text-muted-foreground">
+        <nav className="flex mb-12 text-[10px] uppercase tracking-widest font-bold" aria-label="Breadcrumb">
+          <ol className="flex items-center space-x-3 text-on-surface-variant">
             <li>
               <Link
                 href="/products"
-                className="hover:text-foreground transition-colors"
+                className="hover:text-on-surface transition-colors"
               >
                 Products
               </Link>
             </li>
-            <li aria-hidden="true">/</li>
+            <li aria-hidden="true" className="opacity-30">/</li>
             <li>
-              <span className="text-foreground font-medium">{product.name}</span>
+              <span className="text-on-surface">{product.name}</span>
             </li>
           </ol>
         </nav>

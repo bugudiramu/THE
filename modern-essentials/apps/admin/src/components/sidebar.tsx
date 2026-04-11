@@ -73,22 +73,24 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "relative flex flex-col border-r bg-card transition-all duration-300",
-        collapsed ? "w-16" : "w-64",
+        "relative flex flex-col bg-[#2B7A78] text-[#ffffff] transition-all duration-500 ease-in-out shadow-2xl z-20",
+        collapsed ? "w-20" : "w-72",
       )}
     >
-      <div className="flex h-16 items-center px-4 py-4">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Egg className="h-5 w-5 text-primary-foreground" />
+      <div className="flex h-24 items-center px-6 py-8">
+        <div className="flex items-center gap-4 overflow-hidden">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#3AAFA9] shadow-lg shadow-[#3AAFA9]/20">
+            <Egg className="h-6 w-6 text-white" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold tracking-tight">Modern Ops</span>
+            <span className="text-xl font-headline font-bold tracking-tight text-[#ffffff]">
+              Modern Ops
+            </span>
           )}
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-2 py-4">
+      <nav className="flex-1 space-y-2 px-4 py-8 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -96,43 +98,61 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center rounded-md px-2 py-2 text-sm font-medium transition-colors",
+                "group flex items-center rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-300 relative",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  ? "bg-[#17252A] text-[#ffffff] shadow-sm"
+                  : "text-[#ffffff]/50 hover:bg-[#17252A]/50 hover:text-[#ffffff]",
               )}
             >
               <item.icon
                 className={cn(
-                  "h-5 w-5 shrink-0 transition-colors",
-                  !collapsed && "mr-3",
+                  "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110",
+                  !collapsed && "mr-4",
                   isActive
-                    ? "text-primary-foreground"
-                    : "text-muted-foreground group-hover:text-accent-foreground",
+                    ? "text-[#3AAFA9]"
+                    : "text-[#ffffff]/30 group-hover:text-[#ffffff]/60",
                 )}
               />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && (
+                <span className="tracking-wide uppercase text-[10px] font-bold tracking-[0.15em]">
+                  {item.label}
+                </span>
+              )}
+              {isActive && !collapsed && (
+                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#3AAFA9]" />
+              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t p-4">
+      <div className="p-6 border-t border-[#17252A]/50 bg-[#17252A]/30">
         {!collapsed && (
-          <div className="mb-4 rounded-lg bg-accent/50 p-3">
-            <p className="text-xs font-medium text-muted-foreground">Logged in as</p>
-            <p className="truncate text-sm font-bold">Ops Lead</p>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 px-2">
+              <div className="h-10 w-10 rounded-full bg-[#17252A] flex items-center justify-center text-xs font-bold text-[#ffffff] border border-[#3AAFA9]/20">
+                OL
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-xs font-bold text-[#ffffff] uppercase tracking-widest">
+                  Ops Lead
+                </p>
+                <p className="truncate text-[10px] text-[#ffffff]/40 font-medium">
+                  Central Hub
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border bg-background text-foreground transition-colors"
+        className="absolute -right-4 top-12 flex h-8 w-8 items-center justify-center rounded-full bg-[#3AAFA9] text-white shadow-xl hover:scale-110 active:scale-95 transition-all z-30"
       >
         <ChevronLeft
           className={cn(
-            "h-4 w-4 transition-transform",
+            "h-4 w-4 transition-transform duration-500",
             collapsed && "rotate-180",
           )}
         />

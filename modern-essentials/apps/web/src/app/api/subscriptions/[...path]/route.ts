@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 async function proxy(request: NextRequest, { params }: { params: { path: string[] } }) {
-  const { getToken } = auth();
+  const { getToken } = await auth();
   const token = await getToken();
 
   if (!token) {

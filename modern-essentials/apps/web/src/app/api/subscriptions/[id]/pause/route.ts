@@ -7,7 +7,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const { getToken } = auth();
+  const { getToken } = await auth();
   const token = await getToken();
 
   if (!token) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet } from "@/lib/api";
 import { formatShortDate } from "@/lib/utils";
 import { Database, AlertTriangle, Plus, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -56,22 +56,22 @@ export default function InventoryPage() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-surface">
       <Header title="Inventory Status" />
       
-      <div className="flex-1 p-6 space-y-8 max-w-7xl mx-auto w-full">
+      <div className="flex-1 p-6 space-y-10 max-w-7xl mx-auto w-full">
         {/* Actions */}
-        <div className="flex justify-end gap-3 no-print">
+        <div className="flex justify-end gap-4 no-print">
           <Link
             href="/inventory/grn"
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm"
           >
             <Plus className="h-4 w-4" />
             Record GRN
           </Link>
           <Link
             href="/qc"
-            className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-accent transition-colors"
+            className="flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 text-sm font-bold text-secondary-foreground hover:opacity-90 transition-all shadow-sm"
           >
             <ShieldCheck className="h-4 w-4" />
             QC Log
@@ -79,34 +79,34 @@ export default function InventoryPage() {
         </div>
 
         {/* SKU Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {summary.map((sku) => (
-            <div key={sku.productId} className="rounded-xl border shadow-sm bg-white p-5">
-              <div className="flex items-center justify-between mb-4">
+            <div key={sku.productId} className="rounded-2xl bg-surface-container-low p-6 transition-all hover:bg-surface-container-high group">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="font-bold text-lg text-gray-900">{sku.name}</h3>
-                  <p className="text-xs font-mono text-gray-500 uppercase tracking-wider">{sku.sku}</p>
+                  <h3 className="font-headline font-bold text-xl text-foreground group-hover:text-primary transition-colors">{sku.name}</h3>
+                  <p className="text-[10px] font-black font-mono text-muted-foreground uppercase tracking-widest mt-1">{sku.sku}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
-                  <Database className="h-5 w-5 text-blue-600" />
+                <div className="h-12 w-12 rounded-xl bg-surface-container-highest flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Database className="h-6 w-6 text-primary" />
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">Available</p>
-                  <p className="text-xl font-bold text-gray-900">{sku.availableQty}</p>
+                <div className="p-4 bg-surface-container-high/30 rounded-xl">
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Available</p>
+                  <p className="font-headline text-2xl font-bold text-foreground">{sku.availableQty}</p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">QC Pending</p>
-                  <p className="text-xl font-bold text-orange-600">{sku.qcPendingQty}</p>
+                <div className="p-4 bg-surface-container-high/30 rounded-xl">
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">QC Pending</p>
+                  <p className="font-headline text-2xl font-bold text-secondary">{sku.qcPendingQty}</p>
                 </div>
               </div>
 
               {sku.expiryAlertsCount > 0 && (
-                <div className="mt-4 flex items-center gap-2 text-xs font-medium text-red-600 bg-red-50 p-2 rounded-md border border-red-100">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  {sku.expiryAlertsCount} batches expiring in &lt; 3 days
+                <div className="mt-6 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-red-700 bg-red-50/50 p-3 rounded-xl">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  {sku.expiryAlertsCount} batches expiring soon
                 </div>
               )}
             </div>
@@ -114,58 +114,58 @@ export default function InventoryPage() {
         </div>
 
         {/* Batch Table */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-bold text-gray-900">Active Batches (FEFO Sorted)</h3>
-          <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+        <div className="space-y-6">
+          <h3 className="font-headline text-2xl font-bold text-foreground tracking-tight">Active Batches <span className="text-sm font-sans font-medium text-muted-foreground ml-2">(FEFO Sorted)</span></h3>
+          <div className="rounded-2xl bg-surface-container-low overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+              <table className="w-full border-separate border-spacing-0">
+                <thead className="bg-surface-container-high/50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Batch ID</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">SKU</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Farm</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Qty</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">QC Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Expires At</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                    <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">Batch ID</th>
+                    <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">SKU</th>
+                    <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">Farm</th>
+                    <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">Qty</th>
+                    <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">QC Status</th>
+                    <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">Expires At</th>
+                    <th className="px-6 py-5 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="bg-surface-container-low/30">
                   {loading ? (
-                    <tr><td colSpan={7} className="p-8 text-center text-gray-500">Loading batches...</td></tr>
+                    <tr><td colSpan={7} className="px-6 py-20 text-center text-muted-foreground italic font-medium">Loading batches...</td></tr>
                   ) : batches.length === 0 ? (
-                    <tr><td colSpan={7} className="p-8 text-center text-gray-500">No active batches found.</td></tr>
+                    <tr><td colSpan={7} className="px-6 py-20 text-center text-muted-foreground italic font-medium">No active batches found.</td></tr>
                   ) : (
                     batches.map((batch) => (
-                      <tr key={batch.id} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 font-mono text-xs text-gray-500 uppercase">{batch.id.slice(-8)}</td>
-                        <td className="px-4 py-3">
-                          <p className="text-sm font-medium text-gray-900">{batch.productName}</p>
-                          <p className="text-[10px] font-mono text-gray-500">{batch.sku}</p>
+                      <tr key={batch.id} className="hover:bg-surface-container-low transition-all duration-200 group">
+                        <td className="px-6 py-6 font-mono text-[10px] font-black text-muted-foreground uppercase">{batch.id.slice(-8)}</td>
+                        <td className="px-6 py-6">
+                          <p className="text-sm font-bold text-foreground">{batch.productName}</p>
+                          <p className="text-[10px] font-black font-mono text-muted-foreground uppercase tracking-wider mt-0.5">{batch.sku}</p>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{batch.farmName || "N/A"}</td>
-                        <td className="px-4 py-3 text-sm font-bold text-gray-900">{batch.qty}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            batch.qcStatus === 'PASSED' ? 'bg-emerald-100 text-emerald-800' :
-                            batch.qcStatus === 'PENDING' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
+                        <td className="px-6 py-6 text-sm font-medium text-muted-foreground">{batch.farmName || "—"}</td>
+                        <td className="px-6 py-6 text-sm font-black text-foreground">{batch.qty}</td>
+                        <td className="px-6 py-6">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                            batch.qcStatus === 'PASSED' ? 'bg-emerald-100 text-emerald-900' :
+                            batch.qcStatus === 'PENDING' ? 'bg-orange-100 text-orange-900' :
+                            'bg-red-100 text-red-900'
                           }`}>
                             {batch.qcStatus}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{formatShortDate(batch.expiresAt)}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
+                        <td className="px-6 py-6 text-sm font-medium text-muted-foreground">{formatShortDate(batch.expiresAt)}</td>
+                        <td className="px-6 py-6">
+                          <div className="flex items-center gap-4">
                             <Link
                               href={`/qc?batchId=${batch.id}`}
-                              className="text-xs font-medium text-primary hover:underline"
+                              className="text-xs font-bold text-primary hover:text-primary/70 transition-colors uppercase tracking-widest"
                             >
                               QC
                             </Link>
                             <Link
                               href={`/inventory/reconcile?batchId=${batch.id}`}
-                              className="text-xs font-medium text-red-600 hover:underline"
+                              className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors uppercase tracking-widest"
                             >
                               Reconcile
                             </Link>

@@ -81,20 +81,20 @@ function ReactivateContent() {
 
   if (!isLoaded || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary"></div>
       </div>
     );
   }
 
   if (error && !subscription) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-        <p className="text-gray-600 mb-8">{error}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-surface">
+        <h1 className="text-3xl font-headline text-destructive mb-4">Error</h1>
+        <p className="text-on-surface-variant mb-8">{error}</p>
         <button 
           onClick={() => router.push("/")}
-          className="bg-teal-600 text-white px-6 py-2 rounded-md"
+          className="bg-secondary text-white px-8 py-3 rounded-full font-medium transition-transform hover:scale-[1.02]"
         >
           Go Home
         </button>
@@ -103,40 +103,40 @@ function ReactivateContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back!</h1>
-          <p className="mt-2 text-gray-600">Reactivate your subscription with one click.</p>
+    <div className="min-h-screen bg-surface-container-low py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-xl mx-auto bg-surface rounded-2xl p-8 md:p-12 shadow-sm">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-headline text-on-surface mb-3">Welcome Back!</h1>
+          <p className="text-lg text-on-surface-variant font-body">Reactivate your subscription with one click.</p>
         </div>
 
         {success ? (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-6 rounded text-center">
-            <h2 className="text-xl font-bold mb-2">Successfully Reactivated!</h2>
-            <p>Your subscription is back in action. Redirecting you to your subscriptions...</p>
+          <div className="bg-primary/5 text-primary px-4 py-8 rounded-xl text-center">
+            <h2 className="text-2xl font-headline mb-3">Successfully Reactivated!</h2>
+            <p className="font-body">Your subscription is back in action. Redirecting you to your subscriptions...</p>
           </div>
         ) : (
           <>
-            <div className="border-t border-b border-gray-100 py-6 mb-8">
-              <h2 className="text-lg font-semibold mb-4 text-gray-700">Previous Subscription:</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Product:</span>
-                  <span className="font-medium">{subscription?.productName}</span>
+            <div className="bg-surface-container-low p-6 rounded-xl mb-10">
+              <h2 className="text-xl font-headline mb-6 text-on-surface">Previous Subscription:</h2>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-on-surface-variant font-label">Product:</span>
+                  <span className="font-medium text-on-surface">{subscription?.productName}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Quantity:</span>
-                  <span className="font-medium">{subscription?.quantity} units</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-on-surface-variant font-label">Quantity:</span>
+                  <span className="font-medium text-on-surface">{subscription?.quantity} units</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Frequency:</span>
-                  <span className="font-medium capitalize">{subscription?.frequency?.toLowerCase()}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-on-surface-variant font-label">Frequency:</span>
+                  <span className="font-medium capitalize text-on-surface">{subscription?.frequency?.toLowerCase()}</span>
                 </div>
               </div>
             </div>
 
             {error && (
-              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="mb-6 bg-destructive/10 text-destructive px-4 py-3 rounded-lg">
                 {error}
               </div>
             )}
@@ -144,14 +144,14 @@ function ReactivateContent() {
             <button
               onClick={handleReactivate}
               disabled={reactivating}
-              className={`w-full py-4 rounded-lg text-white font-bold text-lg transition-colors ${
-                reactivating ? "bg-teal-400 cursor-not-allowed" : "bg-teal-600 hover:bg-teal-700"
+              className={`w-full py-5 rounded-full text-white font-bold text-lg transition-all transform hover:scale-[1.01] ${
+                reactivating ? "bg-secondary/60 cursor-not-allowed" : "bg-secondary hover:shadow-lg active:scale-95"
               }`}
             >
               {reactivating ? "Reactivating..." : "Reactivate Now"}
             </button>
             
-            <p className="mt-4 text-center text-sm text-gray-500">
+            <p className="mt-6 text-center text-sm text-on-surface-variant/80 font-body">
               By clicking reactivate, a new subscription will be created with your existing details.
             </p>
           </>

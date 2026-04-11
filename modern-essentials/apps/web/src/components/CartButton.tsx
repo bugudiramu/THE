@@ -1,5 +1,6 @@
 'use client';
 
+import { ShoppingBag } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 
 export default function CartButton() {
@@ -8,17 +9,17 @@ export default function CartButton() {
   return (
     <button
       onClick={openCart}
-      className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      className="relative group p-2 transition-all duration-300 outline-none"
     >
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-      </svg>
-
-      {totalItems > 0 && (
-        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
-          {totalItems > 99 ? '99+' : totalItems}
-        </span>
-      )}
+      <div className="relative">
+        <ShoppingBag className="h-5 w-5 text-primary group-hover:text-secondary transition-colors" strokeWidth={1.5} />
+        
+        {totalItems > 0 && (
+          <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center bg-secondary text-[8px] font-black text-white rounded-full ring-2 ring-surface shadow-sm animate-in zoom-in duration-300">
+            {totalItems > 9 ? '9+' : totalItems}
+          </span>
+        )}
+      </div>
     </button>
   );
 }

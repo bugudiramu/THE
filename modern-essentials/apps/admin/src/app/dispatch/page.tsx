@@ -105,27 +105,27 @@ export default function DispatchPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 print:bg-white text-gray-900">
+    <div className="flex flex-col h-full bg-surface print:bg-white text-foreground">
       <Header title="Dispatch Manifest" />
-      <div className="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full print-full-width">
+      <div className="flex-1 p-6 space-y-12 max-w-5xl mx-auto w-full print-full-width">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 no-print">
           <div>
-            <h3 className="text-lg font-semibold text-foreground">
-              Dispatch Manifest
+            <h3 className="font-headline text-3xl font-bold text-foreground">
+              Shipment Manifest
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-2 font-medium">
               {data?.orderCount || 0} packed orders across {data?.areaCount || 0} areas
               {data?.generatedAt &&
                 ` · Generated ${new Date(data.generatedAt).toLocaleTimeString("en-IN")}`}
             </p>
           </div>
-          <div className="no-print flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {data && data.manifests && data.manifests.length > 0 && (
               <button
                 onClick={handleBulkDispatch}
                 disabled={dispatchLoading === "bulk"}
-                className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white hover:opacity-90 transition-all disabled:opacity-50 shadow-sm"
               >
                 <Truck className="h-4 w-4" />
                 {dispatchLoading === "bulk"
@@ -135,7 +135,7 @@ export default function DispatchPage() {
             )}
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white hover:bg-primary/90 transition-all shadow-sm"
             >
               <Printer className="h-4 w-4" />
               Print
@@ -145,92 +145,91 @@ export default function DispatchPage() {
 
         {/* Manifest areas */}
         {loading ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-500">
+          <div className="rounded-3xl bg-surface-container-low p-20 text-center font-headline italic text-muted-foreground">
             Loading manifest...
           </div>
         ) : !data || !data.manifests || data.manifests.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-12 text-center">
-            <Truck className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">
+          <div className="rounded-3xl bg-surface-container-low p-20 text-center space-y-4">
+            <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+            <p className="font-headline text-2xl text-muted-foreground italic">
               No packed orders awaiting dispatch.
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">
               Orders must be in PACKED status to appear here.
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-16">
             {data.manifests.map((area) => (
-              <div key={area.postalCode} className="space-y-4 break-inside-avoid">
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-gray-200"></div>
-                  <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3">
-                    Area: {area.postalCode} ({area.orders.length} orders)
+              <div key={area.postalCode} className="space-y-8 break-inside-avoid">
+                <div className="flex items-center gap-6">
+                  <h4 className="font-headline text-2xl font-bold text-primary italic whitespace-nowrap">
+                    Area: {area.postalCode} <span className="text-sm font-sans font-medium text-muted-foreground not-italic ml-3">({area.orders.length} orders)</span>
                   </h4>
-                  <div className="h-px flex-1 bg-gray-200"></div>
+                  <div className="h-px flex-1 bg-surface-container-high"></div>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden print:border-none print:shadow-none">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
+                <div className="rounded-3xl bg-surface-container-low overflow-hidden print:border-none border-none">
+                  <table className="w-full border-separate border-spacing-0">
+                    <thead className="bg-surface-container-high/50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest w-12">
                           #
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                           Order ID
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                           Customer
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                           Items
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                           Total
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                           Type
                         </th>
-                        <th className="no-print px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="no-print px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                           Action
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 bg-white">
+                    <tbody className="bg-surface-container-low/30">
                       {area.orders.map((order, idx) => (
                         <tr
                           key={order.orderId}
-                          className="hover:bg-muted/30 transition-colors"
+                          className="hover:bg-surface-container-high/50 transition-all duration-200 group"
                         >
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                          <td className="px-6 py-6 text-[10px] font-black text-muted-foreground opacity-50">
                             {idx + 1}
                           </td>
-                          <td className="px-4 py-3 text-sm font-mono text-foreground">
-                            {order.orderId.slice(-8)}
+                          <td className="px-6 py-6 text-sm font-mono font-bold text-foreground">
+                            #{order.orderId.slice(-8)}
                           </td>
-                          <td className="px-4 py-3">
-                            <p className="text-sm text-foreground">
+                          <td className="px-6 py-6">
+                            <p className="text-sm font-bold text-foreground">
                               {order.customerPhone}
                             </p>
                             {order.customerEmail && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tight mt-1">
                                 {order.customerEmail}
                               </p>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                          <td className="px-6 py-6 text-sm font-medium text-muted-foreground max-w-xs">
                             {order.items.map((i) => `${i.productName} ×${i.qty}`).join(", ")}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-foreground">
+                          <td className="px-6 py-6 text-sm font-black text-foreground">
                             {formatPrice(order.total)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-6">
                             <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                              className={`inline-flex items-center rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm ${
                                 order.type === "SUBSCRIPTION_RENEWAL"
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-secondary text-secondary-foreground"
+                                  ? "bg-primary text-[#ffffff]"
+                                  : "bg-surface-container-high text-foreground"
                               }`}
                             >
                               {order.type === "SUBSCRIPTION_RENEWAL"
@@ -238,11 +237,11 @@ export default function DispatchPage() {
                                 : "One-time"}
                             </span>
                           </td>
-                          <td className="no-print px-4 py-3">
+                          <td className="no-print px-6 py-6">
                             <button
                               onClick={() => handleDispatch(order.orderId)}
                               disabled={dispatchLoading === order.orderId}
-                              className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs font-medium text-orange-500 hover:bg-orange-500/20 transition-colors disabled:opacity-50"
+                              className="rounded-xl bg-secondary/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-secondary hover:bg-secondary hover:text-[#ffffff] transition-all disabled:opacity-50 active:scale-95 shadow-sm"
                             >
                               {dispatchLoading === order.orderId
                                 ? "..."
@@ -260,9 +259,9 @@ export default function DispatchPage() {
         )}
 
         {/* Print footer */}
-        <div className="hidden print:block mt-8 border-t border-gray-300 pt-4">
-          <p className="text-xs text-gray-500">
-            Modern Essentials &mdash; Dispatch Manifest &mdash; Printed{" "}
+        <div className="hidden print:block mt-12 border-t border-primary/20 pt-6">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            Modern Essentials &mdash; Shipment Manifest &mdash; Printed{" "}
             {new Date().toLocaleDateString("en-IN")}
           </p>
         </div>

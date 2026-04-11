@@ -37,49 +37,47 @@ export function ProductList({ products }: ProductListProps) {
         return (
           <div
             key={product.id}
-            className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col border border-gray-100 relative"
+            className="group bg-surface-container-low transition-all duration-300 overflow-hidden flex flex-col relative"
           >
             {inCartQty > 0 && (
-              <div className="absolute top-4 left-4 z-10 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-in fade-in zoom-in duration-300">
+              <div className="absolute top-4 left-4 z-10 bg-secondary text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-in fade-in zoom-in duration-300">
                 {inCartQty} in cart
               </div>
             )}
             <Link
               href={`/products/${product.id}`}
-              className="block relative h-64 overflow-hidden"
+              className="block relative h-64"
             >
               <img
                 src={mainImage}
                 alt={product.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-900 shadow-sm">
+              <div className="absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-bold text-on-surface shadow-sm">
                 {product.category.replace("_", " ")}
               </div>
             </Link>
 
-            <div className="p-6 flex flex-col flex-grow">
-              <div className="mb-4">
-                <Link
-                  href={`/products/${product.id}`}
-                  className="hover:text-primary transition-colors"
-                >
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {product.name}
-                  </h3>
-                </Link>
-                <p className="text-gray-600 line-clamp-2 text-sm leading-relaxed">
-                  {product.description}
-                </p>
-              </div>
+            <div className="p-6 flex flex-col flex-grow space-y-2">
+              <Link
+                href={`/products/${product.id}`}
+                className="hover:opacity-80 transition-opacity"
+              >
+                <h3 className="text-xl font-headline text-on-surface">
+                  {product.name}
+                </h3>
+              </Link>
+              <p className="text-on-surface-variant line-clamp-2 text-sm leading-relaxed font-body">
+                {product.description}
+              </p>
 
-              <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
+              <div className="mt-auto pt-4 flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-2xl font-black text-gray-900">
+                  <span className="text-xl font-bold text-on-surface font-body">
                     Rs. {(product.price / 100).toFixed(2)}
                   </span>
                   {product.subPrice && (
-                    <span className="text-sm text-green-600 font-medium">
+                    <span className="text-[10px] text-on-secondary-container font-bold uppercase tracking-wider font-body">
                       Save Rs.{" "}
                       {((product.price - product.subPrice) / 100).toFixed(2)}{" "}
                       with sub
@@ -88,7 +86,7 @@ export function ProductList({ products }: ProductListProps) {
                 </div>
 
                 {inCartQty > 0 ? (
-                  <div className="flex items-center bg-gray-100 rounded-xl p-1 border">
+                  <div className="flex items-center bg-surface rounded-full p-1 border-none shadow-sm">
                     <button
                       onClick={() => {
                         const item = items.find(
@@ -100,11 +98,11 @@ export function ProductList({ products }: ProductListProps) {
                           else removeItem(item.id);
                         }
                       }}
-                      className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-colors font-bold"
+                      className="w-8 h-8 flex items-center justify-center hover:bg-surface-container-high rounded-full transition-colors font-bold text-on-surface"
                     >
                       -
                     </button>
-                    <span className="w-8 text-center font-bold text-sm">
+                    <span className="w-8 text-center font-bold text-sm text-on-surface">
                       {inCartQty}
                     </span>
                     <button
@@ -114,7 +112,7 @@ export function ProductList({ products }: ProductListProps) {
                         );
                         if (item) updateItem(item.id, item.quantity + 1);
                       }}
-                      className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-colors font-bold"
+                      className="w-8 h-8 flex items-center justify-center hover:bg-surface-container-high rounded-full transition-colors font-bold text-on-surface"
                     >
                       +
                     </button>
@@ -122,19 +120,12 @@ export function ProductList({ products }: ProductListProps) {
                 ) : (
                   <button
                     onClick={() => addItem(product, 1)}
-                    className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-6 rounded-xl transition-all active:scale-95 shadow-lg shadow-gray-200 flex items-center gap-2"
+                    className="bg-secondary hover:opacity-90 text-white font-bold py-2.5 px-5 rounded-full transition-all active:scale-95 flex items-center gap-2 text-sm uppercase tracking-widest"
                   >
-                    <span className="text-white">Add to Cart</span>
+                    <span>Add to Cart</span>
                   </button>
                 )}
               </div>
-
-              <Link
-                href={`/products/${product.id}`}
-                className="mt-4 text-center text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors py-2"
-              >
-                View Details →
-              </Link>
             </div>
           </div>
         );

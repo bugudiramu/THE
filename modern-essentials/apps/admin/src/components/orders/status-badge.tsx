@@ -13,16 +13,16 @@ type BadgeVariant =
   | "default";
 
 const variantStyles: Record<BadgeVariant, string> = {
-  pending: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
-  paid: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-  picked: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
-  packed: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
-  dispatched: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
-  delivered: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  cancelled: "bg-red-500/15 text-red-600 dark:text-red-400",
-  payment_failed: "bg-red-500/15 text-red-600 dark:text-red-400",
-  refunded: "bg-gray-500/15 text-gray-600 dark:text-gray-400",
-  default: "bg-gray-500/15 text-gray-600 dark:text-gray-400",
+  pending: "bg-secondary-fixed/40 text-on-secondary-fixed",
+  paid: "bg-primary-fixed text-on-primary-fixed",
+  picked: "bg-primary-fixed/70 text-on-primary-fixed",
+  packed: "bg-primary-fixed/40 text-on-primary-fixed",
+  dispatched: "bg-secondary-fixed text-on-secondary-fixed",
+  delivered: "bg-primary-fixed text-on-primary-fixed",
+  cancelled: "bg-surface-variant text-on-surface-variant",
+  payment_failed: "bg-destructive/10 text-destructive",
+  refunded: "bg-surface-container-high text-on-surface-variant",
+  default: "bg-surface-container text-on-surface-variant",
 };
 
 export function StatusBadge({ status }: { status: string }) {
