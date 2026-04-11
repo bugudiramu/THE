@@ -148,7 +148,7 @@ function OrderConfirmationContent() {
                 Your journey with Modern Essentials doesn't end here. Explore your personalized dashboard or continue discovering fresh essentials.
               </p>
               <div className="space-y-4">
-                <Button asChild className="w-full h-16 bg-[#3AAFA9] hover:bg-[#2d8a7c] text-white rounded-none font-sans font-bold tracking-[0.2em] uppercase text-xs transition-all duration-300">
+                <Button asChild className="w-full h-16 bg-[#3AAFA9] hover:bg-[#2B7A78] text-white rounded-none font-sans font-bold tracking-[0.2em] uppercase text-xs transition-all duration-300">
                   <Link href="/products" className="flex items-center justify-center gap-3">
                     Discover More
                     <ArrowRight className="w-4 h-4" />

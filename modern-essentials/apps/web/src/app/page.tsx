@@ -8,7 +8,7 @@ export default function Home(): JSX.Element {
   return (
     <>
       <main className="min-h-screen bg-surface text-on-surface">
-        <section className="relative pt-40 pb-24 overflow-hidden">
+        <section className="relative pt-40 pb-24 overflow-hidden bg-surface-container-low">
           <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="z-10">
               <div className="inline-flex items-center space-x-2 px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full mb-6">

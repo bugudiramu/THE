@@ -75,7 +75,7 @@ export default function CartSidebar() {
                     <Button 
                       onClick={closeCart} 
                       size="lg" 
-                      className="px-10 font-bold tracking-wide text-white bg-[#3AAFA9] hover:bg-[#2d8a7c] rounded-none h-14"
+                      className="px-10 font-bold tracking-wide text-white bg-[#3AAFA9] hover:bg-[#2B7A78] rounded-none h-14"
                     >
                       Start Shopping
                     </Button>
@@ -180,7 +180,7 @@ export default function CartSidebar() {
                   </p>
                   <Button
                     size="lg"
-                    className="w-full text-base font-bold tracking-widest h-16 transition-all bg-[#3AAFA9] hover:bg-[#2d8a7c] text-white rounded-none shadow-xl shadow-[#3AAFA9]/10"
+                    className="w-full text-base font-bold tracking-widest h-16 transition-all bg-[#3AAFA9] hover:bg-[#2B7A78] text-white rounded-none shadow-xl shadow-[#3AAFA9]/10"
                     onClick={() => {
                       if (typeof globalThis !== "undefined") {
                         (globalThis as any).location.href = "/checkout";

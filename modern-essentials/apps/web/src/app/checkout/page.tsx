@@ -467,7 +467,7 @@ function CheckoutContent() {
                   form="checkout-form"
                   disabled={loading}
                   size="lg"
-                  className="w-full text-sm font-bold tracking-[0.2em] uppercase h-16 bg-[#3AAFA9] hover:bg-[#2d8a7c] text-white rounded-none transition-all duration-300"
+                  className="w-full text-sm font-bold tracking-[0.2em] uppercase h-16 bg-[#3AAFA9] hover:bg-[#2B7A78] text-white rounded-none transition-all duration-300"
                 >
                   {loading
                     ? "Authenticating Gateway..."

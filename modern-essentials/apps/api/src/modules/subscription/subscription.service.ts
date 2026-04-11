@@ -698,7 +698,9 @@ export class SubscriptionService {
 
     if (!sub) throw new NotFoundException("Subscription not found");
     if (sub.status !== (SubscriptionStatus.PAUSED as any)) {
-      throw new BadRequestException("Only paused subscriptions can be resumed");
+      throw new BadRequestException(
+        `Subscription is currently in ${sub.status} state and cannot be resumed manually. Only paused subscriptions can be resumed.`,
+      );
     }
 
     await this.transitionStatus(subId, SubscriptionStatus.ACTIVE);

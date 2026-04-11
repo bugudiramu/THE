@@ -122,30 +122,42 @@ export default function SubscriptionDetailPage() {
             <div className="flex flex-wrap items-center gap-6">
               <h1 className="text-6xl font-headline font-bold tracking-tight text-primary leading-none">{subscription.productName}</h1>
               <Badge className={`px-4 py-1.5 text-xs font-bold uppercase tracking-widest rounded-full border-none ${
-                subscription.status === "ACTIVE" ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary"
+                subscription.status === "ACTIVE" ? "bg-primary/10 text-primary" : 
+                subscription.status === "PAUSED" ? "bg-secondary/10 text-secondary" :
+                subscription.status === "RENEWAL_DUE" || subscription.status === "DUNNING" ? "bg-amber-100 text-amber-700" :
+                "bg-red-100 text-red-700"
               }`}>
-                {subscription.status}
+                {subscription.status.replace("_", " ")}
               </Badge>
             </div>
             <p className="text-primary/40 font-bold text-xs uppercase tracking-[0.2em]">Subscription ID: {subscription.id}</p>
           </div>
           
           <div className="flex gap-4 w-full sm:w-auto">
-             {subscription.status === "ACTIVE" ? (
+             {subscription.status === "ACTIVE" && (
                 <Button variant="outline" className="flex-1 sm:flex-initial h-14 px-8 border-primary/10 text-primary hover:bg-primary/5 rounded-xl font-bold transition-all shadow-sm active:scale-95" onClick={() => setIsPauseOpen(true)}>
                   <Pause className="mr-2 h-4 w-4" />
                   Pause
                 </Button>
-              ) : (
+              )}
+              {subscription.status === "PAUSED" && (
                 <Button variant="outline" className="flex-1 sm:flex-initial h-14 px-8 border-primary/10 text-primary hover:bg-primary/5 rounded-xl font-bold transition-all shadow-sm active:scale-95" onClick={() => handleAction("resume")}>
                   <Play className="mr-2 h-4 w-4" />
                   Resume
                 </Button>
               )}
-              <Button variant="outline" className="flex-1 sm:flex-initial h-14 px-8 border-red-100 text-red-600 hover:bg-red-50 rounded-xl font-bold transition-all shadow-sm active:scale-95" onClick={() => setIsCancelOpen(true)}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Cancel
-              </Button>
+              {(subscription.status === "RENEWAL_DUE" || subscription.status === "DUNNING") && (
+                <Button disabled variant="outline" className="flex-1 sm:flex-initial h-14 px-8 border-amber-100 text-amber-700 opacity-70 rounded-xl font-bold transition-all shadow-sm">
+                  <Clock className="mr-2 h-4 w-4 animate-pulse" />
+                  Processing...
+                </Button>
+              )}
+              {subscription.status !== "CANCELLED" && (
+                <Button variant="outline" className="flex-1 sm:flex-initial h-14 px-8 border-red-100 text-red-600 hover:bg-red-50 rounded-xl font-bold transition-all shadow-sm active:scale-95" onClick={() => setIsCancelOpen(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+              )}
           </div>
         </div>
 
