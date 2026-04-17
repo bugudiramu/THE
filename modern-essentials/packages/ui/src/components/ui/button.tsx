@@ -7,11 +7,11 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../../lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-[12px] border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-secondary/50 active:scale-95 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-[8px] border border-transparent bg-clip-padding text-sm font-bold whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-secondary/50 active:scale-95 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-secondary text-white shadow-[0_4px_14px_0_rgba(58,183,149,0.39)] hover:brightness-110",
+        default: "bg-secondary text-white shadow-sm hover:brightness-110",
         secondary:
           "border border-outline-variant/15 text-primary bg-transparent hover:bg-surface-container-low",
         outline:
@@ -23,10 +23,11 @@ const buttonVariants = cva(
         link: "text-secondary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-12 px-6 py-2.5",
-        sm: "h-9 px-4 text-xs",
-        lg: "h-14 px-8 text-lg",
-        icon: "size-12",
+        default: "h-10 px-5 py-2",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-12 px-6 text-base",
+        icon: "size-10",
+        "icon-sm": "size-8",
       },
     },
     defaultVariants: {

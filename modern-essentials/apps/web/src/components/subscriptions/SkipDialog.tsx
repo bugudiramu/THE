@@ -9,6 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
   Button,
+  Heading,
+  Text,
+  Card
 } from "@modern-essentials/ui";
 import { format } from "date-fns";
 import { SkipForward } from "lucide-react";
@@ -35,30 +38,38 @@ export function SkipDialog({ nextDeliveryDate, isOpen, onClose, onConfirm }: Ski
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] p-10 rounded-xl border-none shadow-[0px_20px_40px_rgba(6,27,14,0.15)] bg-surface !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2">
-        <DialogHeader>
-          <div className="bg-primary/5 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
-            <SkipForward className="text-primary h-7 w-7" />
+      <DialogContent className="sm:max-w-[500px] p-12 rounded-[40px] border-none shadow-2xl bg-surface !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2">
+        <DialogHeader className="text-left space-y-6">
+          <div className="bg-primary/5 w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner">
+            <SkipForward className="text-secondary h-8 w-8" />
           </div>
-          <DialogTitle className="text-3xl font-headline font-bold tracking-tight text-primary">Skip Next Delivery</DialogTitle>
-          <DialogDescription className="text-lg pt-2 leading-relaxed text-primary/60">
-            Are you sure you want to skip your next delivery scheduled for{" "}
-            <span className="font-bold text-primary">
-              {format(new Date(nextDeliveryDate), "MMMM d, yyyy")}
-            </span>?
-          </DialogDescription>
+          <div className="space-y-3">
+            <DialogTitle>
+              <Heading variant="h2" className="tracking-tighter text-primary">Skip Next Delivery</Heading>
+            </DialogTitle>
+            <DialogDescription asChild>
+              <Text variant="lead" className="text-primary/60 font-medium leading-relaxed">
+                Are you sure you want to skip your next delivery scheduled for{" "}
+                <span className="text-primary font-bold">
+                  {format(new Date(nextDeliveryDate), "MMMM d, yyyy")}
+                </span>?
+              </Text>
+            </DialogDescription>
+          </div>
         </DialogHeader>
         
-        <div className="py-8 text-base text-primary/50 leading-relaxed font-medium">
-          Your next delivery after this will be scheduled as per your normal frequency. 
-          You won't be charged for the skipped delivery.
-        </div>
+        <Card className="my-10 bg-primary/5 p-8 rounded-[32px] border-none shadow-inner">
+          <Text className="text-primary/60 font-medium leading-relaxed italic">
+            Your next delivery after this will be scheduled as per your normal frequency. 
+            You won't be charged for the skipped delivery.
+          </Text>
+        </Card>
 
         <DialogFooter className="flex-col sm:flex-col gap-4">
-          <Button className="w-full h-14 bg-secondary hover:brightness-110 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary/20 transition-all active:scale-[0.98]" onClick={handleConfirm} disabled={isSubmitting}>
+          <Button size="lg" className="w-full h-16 bg-secondary hover:brightness-110 text-white font-bold rounded-2xl shadow-xl transition-all active:scale-[0.98]" onClick={handleConfirm} disabled={isSubmitting}>
             {isSubmitting ? "Processing..." : "Confirm Skip"}
           </Button>
-          <Button variant="ghost" className="w-full h-12 text-primary/40 font-bold hover:bg-primary/5 rounded-xl transition-colors" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="ghost" className="w-full h-12 text-primary/30 font-bold hover:bg-primary/5 rounded-xl transition-colors h-auto py-2" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
         </DialogFooter>

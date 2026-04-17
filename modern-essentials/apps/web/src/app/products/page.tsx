@@ -1,5 +1,6 @@
 import { ProductList } from "@/components/ProductList";
 import { Suspense } from "react";
+import { Heading, Badge, Skeleton } from "@modern-essentials/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -31,23 +32,25 @@ export default async function ProductsPage({
   const products = await getProducts(searchParams.category);
 
   return (
-    <div className="min-h-screen bg-surface py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-16 text-center">
-          <h1 className="text-4xl md:text-5xl font-headline text-on-surface mb-4">
+    <div className="min-h-screen bg-surface py-12 md:py-24">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <header className="mb-20 text-center space-y-6">
+          <Heading variant="h1" className="text-5xl md:text-7xl text-primary tracking-tighter">
             Our Fresh Essentials
-          </h1>
+          </Heading>
           {searchParams.category && (
-            <p className="text-on-surface-variant font-body bg-surface-container-low inline-block px-4 py-1.5 rounded-full uppercase tracking-widest text-xs font-bold">
+            <Badge variant="secondary" className="px-6 py-2 rounded-full uppercase tracking-[0.2em] text-xs font-black border-none shadow-sm bg-secondary text-white">
               {searchParams.category.replace("_", " ")}
-            </p>
+            </Badge>
           )}
-        </div>
+        </header>
 
         <Suspense
           fallback={
-            <div className="min-h-[400px] flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+              <Skeleton className="h-96 rounded-[40px]" />
+              <Skeleton className="h-96 rounded-[40px]" />
+              <Skeleton className="h-96 rounded-[40px]" />
             </div>
           }
         >

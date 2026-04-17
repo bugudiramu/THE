@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Button } from "@modern-essentials/ui";
 
 export default function GlobalError({
   error,
@@ -20,12 +21,12 @@ export default function GlobalError({
         An unexpected error occurred in our system. 
         We've been notified and are looking into it.
       </p>
-      <button
+      <Button
         onClick={() => reset()}
-        className="px-8 py-3 bg-secondary text-secondary-foreground font-body rounded-md shadow-sm hover:opacity-90 transition-opacity"
+        className="px-8 py-3 bg-secondary text-secondary-foreground font-body rounded-md shadow-sm hover:opacity-90 transition-opacity h-auto"
       >
         Try again
-      </button>
+      </Button>
     </div>
   );
 }

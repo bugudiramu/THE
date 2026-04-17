@@ -1,7 +1,7 @@
 "use client";
 
-import { RadioGroup, RadioGroupItem } from "@modern-essentials/ui";
-import { Label } from "@modern-essentials/ui";
+import { RadioGroup, RadioGroupItem, Label, Heading, Text, Card } from "@modern-essentials/ui";
+import { cn } from "@/lib/utils";
 
 interface FrequencyPickerProps {
   value: string;
@@ -17,31 +17,42 @@ export function FrequencyPicker({ value, onValueChange, basePrice }: FrequencyPi
   ];
 
   return (
-    <div className="space-y-4 bg-muted/20 p-6 rounded-2xl border border-muted/50">
-      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 block">Choose Frequency</Label>
-      <RadioGroup value={value} onValueChange={onValueChange} className="grid grid-cols-1 gap-3">
+    <Card className="space-y-6 bg-primary/5 p-8 rounded-[32px] border-none shadow-inner">
+      <Text variant="xs" className="font-black uppercase tracking-[0.2em] text-primary/40 block">Choose Frequency</Text>
+      <RadioGroup value={value} onValueChange={onValueChange} className="grid grid-cols-1 gap-4">
         {frequencies.map((freq) => (
-          <Label
-            key={freq.value}
-            htmlFor={`freq-${freq.value}`}
-            className={`flex items-center justify-between p-5 border-2 rounded-2xl cursor-pointer transition-all hover:bg-white group has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50/50 has-[:checked]:shadow-md`}
-          >
-            <div className="flex items-center space-x-4">
-              <RadioGroupItem value={freq.value} id={`freq-${freq.value}`} className="border-teal-600 text-teal-600" />
-              <div className="space-y-0.5">
-                <span className="font-black text-lg text-foreground block group-hover:text-teal-700 transition-colors">
-                  {freq.label}
-                </span>
-                <p className="text-xs font-bold text-muted-foreground/80 leading-none">{freq.description}</p>
+          <div key={freq.value} className="relative">
+            <RadioGroupItem value={freq.value} id={`freq-${freq.value}`} className="peer sr-only" />
+            <Label
+              htmlFor={`freq-${freq.value}`}
+              className={cn(
+                "flex items-center justify-between p-6 border-2 rounded-[24px] cursor-pointer transition-all duration-300",
+                "peer-data-[state=checked]:border-secondary peer-data-[state=checked]:bg-surface peer-data-[state=checked]:shadow-md",
+                "border-primary/5 bg-surface/50 hover:bg-surface"
+              )}
+            >
+              <div className="flex items-center space-x-4">
+                <div className={cn(
+                  "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                  value === freq.value ? "border-secondary bg-secondary text-white" : "border-primary/10"
+                )}>
+                  {value === freq.value && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                </div>
+                <div className="space-y-1">
+                  <Heading variant="h4" className="text-lg text-primary block">
+                    {freq.label}
+                  </Heading>
+                  <Text variant="xs" className="text-primary/40 font-bold leading-none">{freq.description}</Text>
+                </div>
               </div>
-            </div>
-            <div className="text-right">
-              <p className="font-black text-xl text-teal-700">₹{(basePrice / 100).toFixed(2)}</p>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">total</p>
-            </div>
-          </Label>
+              <div className="text-right space-y-1">
+                <Heading variant="h3" className="text-xl text-secondary tracking-tight">₹{(basePrice / 100).toFixed(2)}</Heading>
+                <Text variant="xs" className="text-primary/20 font-black uppercase tracking-widest text-[9px]">total</Text>
+              </div>
+            </Label>
+          </div>
         ))}
       </RadioGroup>
-    </div>
+    </Card>
   );
 }

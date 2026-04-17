@@ -1,7 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { RadioGroup, RadioGroupItem, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from "@modern-essentials/ui";
+import { 
+  RadioGroup, 
+  RadioGroupItem, 
+  Label, 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue, 
+  Badge,
+  Heading,
+  Text,
+  Card
+} from "@modern-essentials/ui";
+import { cn } from "@/lib/utils";
+
 interface SubscriptionToggleProps {
   price: number;
   subPrice?: number;
@@ -36,68 +51,82 @@ export default function SubscriptionToggle({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <RadioGroup value={isSubscription} onValueChange={handleToggle} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Subscribe & Save Option */}
-        <Label
-          htmlFor="subscribe"
-          className="cursor-pointer"
-        >
-          <div className={`relative transition-all h-36 rounded-3xl p-6 flex flex-col justify-between items-start ${isSubscription === "true" ? "bg-surface shadow-sm" : "bg-surface/30 opacity-70 hover:opacity-100"}`}>
-               <div className="flex w-full justify-between items-start mb-2">
-                 <RadioGroupItem value="true" id="subscribe" className="sr-only" />
-                 <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isSubscription === "true" ? "border-secondary" : "border-on-surface/20"}`}>
-                   {isSubscription === "true" && <div className="w-3 h-3 bg-secondary rounded-full"></div>}
-                 </div>
-                 <Badge className="bg-secondary text-white font-bold text-[10px] uppercase tracking-widest border-none">Save {calculateSavings()}%</Badge>
-               </div>
-               <div className="mt-auto">
-                 <p className="font-bold text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Subscribe & Save</p>
-                 <p className="text-xl font-bold tracking-tight text-on-surface font-body">
-                   Rs. {subPrice ? (subPrice / 100).toFixed(2) : (price / 100).toFixed(2)}
-                   <span className="text-xs font-normal text-on-surface-variant ml-2 line-through opacity-50">Rs. {(price / 100).toFixed(2)}</span>
-                 </p>
-               </div>
-          </div>
-        </Label>
+        <div className="relative">
+          <RadioGroupItem value="true" id="subscribe" className="peer sr-only" />
+          <Label
+            htmlFor="subscribe"
+            className={cn(
+              "flex flex-col h-28 justify-between items-start p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300",
+              "peer-data-[state=checked]:border-secondary peer-data-[state=checked]:bg-surface peer-data-[state=checked]:shadow-md",
+              "border-primary/5 bg-surface/30 hover:bg-surface/50"
+            )}
+          >
+            <div className="flex w-full justify-between items-start">
+              <div className={cn(
+                "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                isSubscription === "true" ? "border-secondary bg-secondary text-white" : "border-primary/10"
+              )}>
+                {isSubscription === "true" && <div className="w-2 h-2 bg-white rounded-full" />}
+              </div>
+              <Badge className="bg-secondary text-white font-black text-[9px] uppercase tracking-widest border-none px-2 py-0.5">Save {calculateSavings()}%</Badge>
+            </div>
+            <div className="space-y-0.5">
+              <Text variant="xs" className="text-primary/40 font-black text-[10px]">Subscribe & Save</Text>
+              <div className="flex items-baseline gap-2">
+                <Heading variant="h3" className="text-xl text-primary tracking-tight font-bold">
+                  ₹{subPrice ? (subPrice / 100).toFixed(2) : (price / 100).toFixed(2)}
+                </Heading>
+                <Text variant="small" className="text-primary/20 line-through text-xs font-bold">₹{(price / 100).toFixed(2)}</Text>
+              </div>
+            </div>
+          </Label>
+        </div>
 
         {/* One-time Purchase Option */}
-        <Label
-          htmlFor="onetime"
-          className="cursor-pointer"
-        >
-          <div className={`relative transition-all h-36 rounded-3xl p-6 flex flex-col justify-between items-start ${isSubscription === "false" ? "bg-surface shadow-sm" : "bg-surface/30 opacity-70 hover:opacity-100"}`}>
-               <div className="flex w-full justify-between items-start mb-2">
-                 <RadioGroupItem value="false" id="onetime" className="sr-only" />
-                 <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isSubscription === "false" ? "border-secondary" : "border-on-surface/20"}`}>
-                   {isSubscription === "false" && <div className="w-3 h-3 bg-secondary rounded-full"></div>}
-                 </div>
-               </div>
-               <div className="mt-auto text-left">
-                 <p className="font-bold text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">One-time Purchase</p>
-                 <p className="text-xl font-bold tracking-tight text-on-surface font-body">
-                   Rs. {(price / 100).toFixed(2)}
-                 </p>
-               </div>
-          </div>
-        </Label>
+        <div className="relative">
+          <RadioGroupItem value="false" id="onetime" className="peer sr-only" />
+          <Label
+            htmlFor="onetime"
+            className={cn(
+              "flex flex-col h-28 justify-between items-start p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300",
+              "peer-data-[state=checked]:border-secondary peer-data-[state=checked]:bg-surface peer-data-[state=checked]:shadow-md",
+              "border-primary/5 bg-surface/30 hover:bg-surface/50"
+            )}
+          >
+            <div className={cn(
+              "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+              isSubscription === "false" ? "border-secondary bg-secondary text-white" : "border-primary/10"
+            )}>
+              {isSubscription === "false" && <div className="w-2 h-2 bg-white rounded-full" />}
+            </div>
+            <div className="space-y-0.5">
+              <Text variant="xs" className="text-primary/40 font-black text-[10px]">One-time Purchase</Text>
+              <Heading variant="h3" className="text-xl text-primary tracking-tight font-bold">
+                ₹{(price / 100).toFixed(2)}
+              </Heading>
+            </div>
+          </Label>
+        </div>
       </RadioGroup>
 
       {/* Frequency Selector */}
       {isSubscription === "true" && (
-        <div className="flex items-center space-x-6 bg-surface/50 p-6 rounded-3xl animate-in fade-in slide-in-from-top-2">
-          <Label className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant whitespace-nowrap">Deliver every:</Label>
+        <Card className="flex items-center gap-4 bg-surface/50 p-4 rounded-2xl border-none shadow-inner animate-in fade-in slide-in-from-top-2 duration-500">
+          <Label className="text-[10px] uppercase tracking-widest font-black text-primary/40 whitespace-nowrap">Deliver every:</Label>
           <Select value={frequency} onValueChange={handleFrequencyChange}>
-            <SelectTrigger className="w-full bg-surface border-none rounded-full h-12 px-6 font-bold text-xs uppercase tracking-widest shadow-sm">
+            <SelectTrigger className="w-full bg-surface border-none rounded-xl h-12 px-6 font-bold text-xs uppercase tracking-widest shadow-sm hover:bg-white transition-colors">
               <SelectValue placeholder="Select frequency" />
             </SelectTrigger>
-            <SelectContent className="rounded-2xl border-none shadow-xl">
-              <SelectItem value="WEEKLY" className="text-xs uppercase tracking-widest font-bold">Weekly</SelectItem>
-              <SelectItem value="FORTNIGHTLY" className="text-xs uppercase tracking-widest font-bold">Fortnightly</SelectItem>
-              <SelectItem value="MONTHLY" className="text-xs uppercase tracking-widest font-bold">Monthly</SelectItem>
+            <SelectContent className="rounded-xl border-none shadow-2xl p-1">
+              <SelectItem value="WEEKLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Weekly</SelectItem>
+              <SelectItem value="FORTNIGHTLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Fortnightly</SelectItem>
+              <SelectItem value="MONTHLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Monthly</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Card>
       )}
     </div>
   );

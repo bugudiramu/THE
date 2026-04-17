@@ -2,14 +2,17 @@
 
 import { ShoppingBag } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { Button } from '@modern-essentials/ui';
 
 export default function CartButton() {
   const { totalItems, openCart } = useCart();
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={openCart}
-      className="relative group p-2 transition-all duration-300 outline-none"
+      className="relative group transition-all duration-300 outline-none p-0 h-10 w-10"
     >
       <div className="relative">
         <ShoppingBag className="h-5 w-5 text-primary group-hover:text-secondary transition-colors" strokeWidth={1.5} />
@@ -20,6 +23,6 @@ export default function CartButton() {
           </span>
         )}
       </div>
-    </button>
+    </Button>
   );
 }

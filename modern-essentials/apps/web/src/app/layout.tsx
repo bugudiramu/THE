@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Fraunces, Space_Grotesk } from "next/font/google";
 import { CartProvider } from "../contexts/CartContext";
+import { Toaster, TooltipProvider } from "@modern-essentials/ui";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -36,14 +37,17 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <CartProvider>
-        <html lang="en" className={cn("font-sans antialiased", spaceGrotesk.variable, fraunces.variable)}>
-          <body className="bg-background text-foreground min-h-screen flex flex-col">
-            <UserHeader />
-            <CartSidebar />
-            <main className="flex-grow pt-24 md:pt-32">{children}</main>
-            <Footer />
-          </body>
-        </html>
+        <TooltipProvider>
+          <html lang="en" className={cn("font-sans antialiased", spaceGrotesk.variable, fraunces.variable)}>
+            <body className="bg-background text-foreground min-h-screen flex flex-col selection:bg-secondary/20 selection:text-primary">
+              <UserHeader />
+              <CartSidebar />
+              <main className="flex-grow pt-16 md:pt-20">{children}</main>
+              <Footer />
+              <Toaster richColors position="top-center" closeButton />
+            </body>
+          </html>
+        </TooltipProvider>
       </CartProvider>
     </ClerkProvider>
   );

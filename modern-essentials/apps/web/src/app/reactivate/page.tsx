@@ -3,6 +3,19 @@
 import { useUser } from "@clerk/nextjs";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import { 
+  Button, 
+  Heading, 
+  Text, 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  Skeleton, 
+  Alert, 
+  AlertDescription,
+  Badge
+} from "@modern-essentials/ui";
+import { RefreshCcw, CheckCircle2 } from "lucide-react";
 
 interface Subscription {
   id: string;
@@ -81,89 +94,109 @@ function ReactivateContent() {
 
   if (!isLoaded || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary"></div>
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-xl border-none bg-surface-container-low rounded-[40px] p-12 space-y-8 shadow-sm">
+          <Skeleton className="h-12 w-48 mx-auto" />
+          <Skeleton className="h-6 w-64 mx-auto" />
+          <Skeleton className="h-48 w-full rounded-3xl" />
+          <Skeleton className="h-16 w-full rounded-full" />
+        </Card>
       </div>
     );
   }
 
   if (error && !subscription) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-surface">
-        <h1 className="text-3xl font-headline text-destructive mb-4">Error</h1>
-        <p className="text-on-surface-variant mb-8">{error}</p>
-        <button 
-          onClick={() => router.push("/")}
-          className="bg-secondary text-white px-8 py-3 rounded-full font-medium transition-transform hover:scale-[1.02]"
-        >
-          Go Home
-        </button>
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4">
+        <Card className="max-w-md w-full border-none bg-surface-container-low rounded-[40px] p-12 text-center space-y-8 shadow-sm">
+          <Heading variant="h2" className="text-destructive">Something went wrong</Heading>
+          <Text className="text-primary/60">{error}</Text>
+          <Button 
+            onClick={() => router.push("/")}
+            className="w-full bg-secondary h-16 rounded-full font-bold uppercase tracking-widest shadow-lg"
+          >
+            Return Home
+          </Button>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface-container-low py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl mx-auto bg-surface rounded-2xl p-8 md:p-12 shadow-sm">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-headline text-on-surface mb-3">Welcome Back!</h1>
-          <p className="text-lg text-on-surface-variant font-body">Reactivate your subscription with one click.</p>
-        </div>
+    <div className="min-h-screen bg-surface py-12 md:py-24 px-4 sm:px-6 lg:px-8">
+      <Card className="max-w-xl mx-auto border-none bg-surface-container-low rounded-[40px] overflow-hidden shadow-sm">
+        <CardHeader className="pt-16 pb-8 text-center space-y-4">
+          <Heading variant="h1" className="text-primary tracking-tighter">Welcome Back!</Heading>
+          <Text variant="lead" className="text-primary/60">Reactivate your subscription with one click.</Text>
+        </CardHeader>
 
-        {success ? (
-          <div className="bg-primary/5 text-primary px-4 py-8 rounded-xl text-center">
-            <h2 className="text-2xl font-headline mb-3">Successfully Reactivated!</h2>
-            <p className="font-body">Your subscription is back in action. Redirecting you to your subscriptions...</p>
-          </div>
-        ) : (
-          <>
-            <div className="bg-surface-container-low p-6 rounded-xl mb-10">
-              <h2 className="text-xl font-headline mb-6 text-on-surface">Previous Subscription:</h2>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-on-surface-variant font-label">Product:</span>
-                  <span className="font-medium text-on-surface">{subscription?.productName}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-on-surface-variant font-label">Quantity:</span>
-                  <span className="font-medium text-on-surface">{subscription?.quantity} units</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-on-surface-variant font-label">Frequency:</span>
-                  <span className="font-medium capitalize text-on-surface">{subscription?.frequency?.toLowerCase()}</span>
-                </div>
+        <CardContent className="px-12 pb-16 space-y-10">
+          {success ? (
+            <div className="bg-primary/5 p-10 rounded-[32px] text-center space-y-6 animate-in zoom-in duration-500">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto shadow-lg">
+                <CheckCircle2 className="w-8 h-8 text-secondary" />
+              </div>
+              <div className="space-y-2">
+                <Heading variant="h3" className="text-primary">Successfully Reactivated!</Heading>
+                <Text className="text-primary/60">Your subscription is back in action. Redirecting you shortly...</Text>
               </div>
             </div>
+          ) : (
+            <>
+              <Card className="bg-surface border-none rounded-[32px] p-8 shadow-inner space-y-8">
+                <div className="flex items-center gap-3 border-b border-primary/5 pb-4">
+                  <RefreshCcw className="w-5 h-5 text-secondary" />
+                  <Heading variant="h4" className="text-primary">Previous Plan Details</Heading>
+                </div>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <Text variant="xs" className="text-primary/40 font-bold">Product</Text>
+                    <Text variant="large" className="text-primary">{subscription?.productName}</Text>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Text variant="xs" className="text-primary/40 font-bold">Quantity</Text>
+                    <Text variant="large" className="text-primary">{subscription?.quantity} Units</Text>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Text variant="xs" className="text-primary/40 font-bold">Frequency</Text>
+                    <Badge variant="secondary" className="font-bold uppercase tracking-widest px-3 py-1 border-none">{subscription?.frequency}</Badge>
+                  </div>
+                </div>
+              </Card>
 
-            {error && (
-              <div className="mb-6 bg-destructive/10 text-destructive px-4 py-3 rounded-lg">
-                {error}
+              {error && (
+                <Alert variant="destructive" className="rounded-2xl">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-6">
+                <Button
+                  onClick={handleReactivate}
+                  disabled={reactivating}
+                  size="lg"
+                  className="w-full h-20 bg-secondary hover:brightness-110 text-white rounded-full font-bold uppercase tracking-widest text-sm shadow-xl shadow-secondary/20 transition-all active:scale-[0.98]"
+                >
+                  {reactivating ? "Processing..." : "Reactivate Now"}
+                </Button>
+                
+                <Text variant="xs" className="text-center text-primary/30 font-bold uppercase max-w-[300px] mx-auto leading-relaxed">
+                  By clicking reactivate, a new subscription will be created with your existing details.
+                </Text>
               </div>
-            )}
-
-            <button
-              onClick={handleReactivate}
-              disabled={reactivating}
-              className={`w-full py-5 rounded-full text-white font-bold text-lg transition-all transform hover:scale-[1.01] ${
-                reactivating ? "bg-secondary/60 cursor-not-allowed" : "bg-secondary hover:shadow-lg active:scale-95"
-              }`}
-            >
-              {reactivating ? "Reactivating..." : "Reactivate Now"}
-            </button>
-            
-            <p className="mt-6 text-center text-sm text-on-surface-variant/80 font-body">
-              By clicking reactivate, a new subscription will be created with your existing details.
-            </p>
-          </>
-        )}
-      </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default function ReactivatePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface">
+      <Skeleton className="h-12 w-12 rounded-full" />
+    </div>}>
       <ReactivateContent />
     </Suspense>
   );

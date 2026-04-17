@@ -1,10 +1,19 @@
 "use client";
 
 import { useCart } from "@/contexts/CartContext";
-import { Button, FreshnessGauge } from "@modern-essentials/ui";
+import { 
+  Button, 
+  FreshnessGauge, 
+  Heading, 
+  Text, 
+  AspectRatio, 
+  Card, 
+  Separator 
+} from "@modern-essentials/ui";
 import { Leaf, Minus, Plus, Check } from "lucide-react";
 import { useState } from "react";
 import SubscriptionToggle from "./SubscriptionToggle";
+import Image from "next/image";
 
 interface ProductDetailClientProps {
   product: any;
@@ -33,55 +42,55 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-      {/* Product Images Area */}
-      <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+      {/* Product Images Area - 5 cols */}
+      <div className="lg:col-span-5 space-y-4">
         {product.images && product.images.length > 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {product.images.map((image: any) => (
-              <div
-                key={image.url}
-                className="aspect-square overflow-hidden rounded-3xl bg-surface-container-low"
-              >
-                <img
+              <AspectRatio key={image.url} ratio={1.1} className="overflow-hidden rounded-2xl bg-surface-container-low shadow-sm border border-primary/5">
+                <Image
                   src={image.url}
                   alt={image.alt || product.name}
-                  className="w-full h-full object-cover"
+                  fill
+                  priority
+                  className="object-cover"
                 />
-              </div>
+              </AspectRatio>
             ))}
           </div>
         ) : (
-          <div className="aspect-square rounded-3xl bg-surface-container-low flex items-center justify-center">
-            <span className="text-on-surface-variant text-sm font-body">No Image</span>
-          </div>
+          <AspectRatio ratio={1} className="rounded-2xl bg-surface-container-low flex items-center justify-center border border-dashed border-primary/10">
+            <Text variant="muted">No Image Available</Text>
+          </AspectRatio>
         )}
       </div>
 
-      {/* Product Info & Action Area */}
-      <div className="flex flex-col">
-        <div className="mb-6">
+      {/* Product Info & Action Area - 7 cols */}
+      <div className="lg:col-span-7 flex flex-col gap-5 lg:sticky lg:top-24">
+        <div className="space-y-3">
           <FreshnessGauge 
-            icon={<Leaf />} 
+            icon={<Leaf className="w-3 h-3" />} 
             label="Farm Fresh Direct" 
-            className="mb-4"
           />
           
-          <h1 className="text-4xl sm:text-5xl font-headline text-on-surface mb-6 leading-tight">
+          <Heading variant="h1" className="text-2xl sm:text-3xl text-primary leading-tight font-bold">
             {product.name}
-          </h1>
+          </Heading>
 
-          <p className="text-lg text-on-surface-variant leading-relaxed mb-8 font-body">
+          <Text className="text-primary/60 leading-relaxed font-medium text-sm max-w-2xl">
             {product.description ||
-              "Farm fresh directly to your doorstep. Perfect for daily consumption, packed with extreme care and zero compromises."}
-          </p>
+              "Farm fresh directly to your doorstep. Perfect for daily consumption, packed with care and zero compromises."}
+          </Text>
         </div>
 
         {/* Pricing / Plan Selection */}
-        <div className="bg-surface-container-low rounded-3xl p-8 md:p-10">
-          <h2 className="text-[10px] uppercase tracking-widest font-bold text-on-surface mb-8">
-            Choose Your Plan
-          </h2>
+        <Card className="bg-surface-container-low border-none rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-primary/5">
+          <div className="mb-4">
+            <Text variant="xs" className="text-primary/30 font-black uppercase tracking-[0.1em]">
+              Select Your Plan
+            </Text>
+          </div>
 
           <SubscriptionToggle
             price={product.price}
@@ -89,47 +98,53 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             onSubscriptionChange={handleSubscriptionChange}
           />
 
-          <div className="my-10 h-px bg-on-surface/5" />
+          <Separator className="my-5 bg-primary/5" />
 
           {/* Action Buttons */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs uppercase tracking-widest font-bold text-on-surface">
-                Quantity
-              </span>
-              <div className="flex items-center space-x-6 bg-surface rounded-full px-4 py-2">
-                <button
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Text variant="xs" className="text-primary/40 font-bold uppercase tracking-widest">
+                Curated Quantity
+              </Text>
+              <div className="flex items-center space-x-4 bg-surface rounded-full px-3 py-1.5 shadow-inner border border-primary/5">
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-high text-on-surface transition-colors"
+                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-surface-container-high text-primary transition-colors p-0"
                 >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="w-4 text-center font-bold text-on-surface font-body">
+                  <Minus className="w-3.5 h-3.5" />
+                </Button>
+                <Text className="w-4 text-center font-bold text-sm text-primary">
                   {quantity}
-                </span>
-                <button
+                </Text>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-high text-on-surface transition-colors"
+                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-surface-container-high text-primary transition-colors p-0"
                 >
-                  <Plus className="w-4 h-4" />
-                </button>
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
               </div>
             </div>
 
             <Button
               onClick={handleAddToCart}
               size="lg"
-              className="w-full text-xs uppercase tracking-widest font-bold h-16 bg-secondary hover:opacity-90 text-white rounded-full transition-all active:scale-[0.98]"
+              className="w-full text-xs uppercase tracking-[0.15em] font-black h-12 bg-secondary hover:brightness-110 text-white rounded-full transition-all active:scale-[0.98] shadow-md shadow-secondary/10"
             >
-              {isSubscription ? "Subscribe Now" : "Add to Cart"}
+              {isSubscription ? "Start Subscription" : "Add to Cart"}
             </Button>
 
-            <p className="text-[10px] uppercase tracking-widest font-bold text-center text-on-surface-variant flex items-center justify-center pt-4 opacity-60">
-              <Check className="w-3 h-3 mr-2" />
-              No commitments. Cancel or pause anytime.
-            </p>
+            <div className="flex items-center justify-center gap-2">
+              <Check className="w-3 h-3 text-secondary" />
+              <Text variant="xs" className="text-primary/30 font-bold uppercase tracking-widest text-[8px]">
+                Flexible schedule. Cancel anytime.
+              </Text>
+            </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

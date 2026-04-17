@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@modern-essentials/ui";
-import { Label } from "@modern-essentials/ui";
+import { Button, Heading, Text, Card } from "@modern-essentials/ui";
 import { Minus, Plus } from "lucide-react";
 
 interface QuantityPickerProps {
@@ -34,50 +33,50 @@ export function QuantityPicker({
   };
 
   return (
-    <div className="space-y-6 bg-muted/20 p-6 rounded-2xl border border-muted/50">
+    <Card className="space-y-8 bg-primary/5 p-8 rounded-[32px] border-none shadow-inner">
       <div className="flex justify-between items-end">
-        <div className="space-y-1">
-          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Select Quantity</Label>
-          <p className="text-sm font-bold text-foreground">Adjust your delivery size</p>
+        <div className="space-y-2">
+          <Text variant="xs" className="font-black uppercase tracking-[0.2em] text-primary/40 block">Select Quantity</Text>
+          <Heading variant="h4" className="text-primary">Adjust your delivery size</Heading>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-black text-teal-700">₹{((pricePerUnit * value) / 100).toFixed(2)}</p>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">per delivery</p>
+        <div className="text-right space-y-1">
+          <Heading variant="h3" className="text-2xl text-secondary tracking-tight">₹{((pricePerUnit * value) / 100).toFixed(2)}</Heading>
+          <Text variant="xs" className="text-primary/20 font-black uppercase tracking-widest text-[9px]">per delivery</Text>
         </div>
       </div>
 
-      <div className="flex items-center justify-between bg-white border-2 border-muted p-2 rounded-2xl shadow-sm">
+      <div className="flex items-center justify-between bg-surface border-2 border-primary/5 p-3 rounded-3xl shadow-sm">
         <Button
           variant="ghost"
           size="icon"
-          className="h-12 w-12 rounded-xl bg-muted/10 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+          className="h-14 w-14 rounded-2xl bg-primary/5 hover:bg-secondary/10 hover:text-secondary transition-all"
           onClick={decrement}
           disabled={value <= min}
         >
-          <Minus className="h-5 w-5" />
+          <Minus className="h-6 w-6" />
         </Button>
         
         <div className="flex flex-col items-center">
-          <span className="text-3xl font-black text-foreground tabular-nums">{value}</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Eggs</span>
+          <Heading variant="h1" className="text-4xl text-primary tabular-nums">{value}</Heading>
+          <Text variant="xs" className="text-primary/30 font-black uppercase tracking-widest text-[10px]">Units</Text>
         </div>
 
         <Button
           variant="ghost"
           size="icon"
-          className="h-12 w-12 rounded-xl bg-muted/10 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+          className="h-14 w-14 rounded-2xl bg-primary/5 hover:bg-secondary/10 hover:text-secondary transition-all"
           onClick={increment}
           disabled={value >= max}
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-6 w-6" />
         </Button>
       </div>
 
-      <div className="bg-white/50 p-3 rounded-xl border border-dashed text-center">
-        <p className="text-xs font-bold text-muted-foreground">
-          Recommended for: <span className="text-foreground">{value >= 24 ? "Large Family (4+ people)" : value >= 12 ? "Regular Family (2-3 people)" : "Individuals / Couples"}</span>
-        </p>
-      </div>
-    </div>
+      <Card className="bg-surface/50 p-4 rounded-2xl border border-dashed border-primary/10 text-center">
+        <Text variant="xs" className="text-primary/40 font-bold uppercase tracking-wider">
+          Best for: <span className="text-primary">{value >= 24 ? "Large Family (4+ people)" : value >= 12 ? "Regular Family (2-3 people)" : "Individuals / Couples"}</span>
+        </Text>
+      </Card>
+    </Card>
   );
 }

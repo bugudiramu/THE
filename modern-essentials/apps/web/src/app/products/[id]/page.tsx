@@ -1,6 +1,15 @@
 import { ProductDetailClient } from "@/components/ProductDetailClient";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { 
+  Breadcrumb, 
+  BreadcrumbItem, 
+  BreadcrumbLink, 
+  BreadcrumbList, 
+  BreadcrumbPage, 
+  BreadcrumbSeparator,
+  Text
+} from "@modern-essentials/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -35,25 +44,26 @@ export default async function ProductDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface pb-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+    <div className="min-h-screen bg-surface pb-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 py-8 md:py-10">
         {/* Breadcrumb */}
-        <nav className="flex mb-12 text-[10px] uppercase tracking-widest font-bold" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-3 text-on-surface-variant">
-            <li>
-              <Link
-                href="/products"
-                className="hover:text-on-surface transition-colors"
-              >
-                Products
-              </Link>
-            </li>
-            <li aria-hidden="true" className="opacity-30">/</li>
-            <li>
-              <span className="text-on-surface">{product.name}</span>
-            </li>
-          </ol>
-        </nav>
+        <Breadcrumb className="mb-8">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/products">
+                  <Text variant="xs" className="font-bold text-primary/40 hover:text-primary transition-colors">Products</Text>
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="text-primary/20" />
+            <BreadcrumbItem>
+              <BreadcrumbPage>
+                <Text variant="xs" className="font-bold text-primary">{product.name}</Text>
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <ProductDetailClient product={product} />
       </div>

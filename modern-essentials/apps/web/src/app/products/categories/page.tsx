@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Heading, Text, Card, Button } from "@modern-essentials/ui";
+import { ArrowRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -19,16 +21,16 @@ export default async function CategoriesPage() {
   const categories = await getCategories();
 
   return (
-    <div className="min-h-screen bg-surface-container-low">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <header className="mb-16 border-l-4 border-secondary pl-6">
-          <h1 className="text-5xl md:text-6xl font-headline text-on-surface mb-4 tracking-tight">
+    <div className="min-h-screen bg-surface py-12 md:py-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <header className="mb-20 space-y-6 max-w-3xl">
+          <Heading variant="h1" className="text-5xl md:text-7xl text-primary tracking-tighter border-l-8 border-secondary pl-8">
             Our Collections
-          </h1>
-          <p className="text-xl text-on-surface-variant font-body max-w-2xl leading-relaxed">
+          </Heading>
+          <Text variant="lead" className="text-primary/60 pl-8 text-xl leading-relaxed">
             Thoughtfully curated essentials for your home and lifestyle. 
             Discover quality that endures and designs that inspire.
-          </p>
+          </Text>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
@@ -38,31 +40,29 @@ export default async function CategoriesPage() {
               href={`/products?category=${category}`}
               className="group block"
             >
-              <div className="bg-surface p-10 h-full flex flex-col justify-between transition-all duration-500 hover:shadow-xl hover:-translate-y-1 rounded-sm relative overflow-hidden">
+              <Card className="border-none bg-surface-container-low p-10 h-full flex flex-col justify-between transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 rounded-[40px] relative overflow-hidden shadow-sm">
                 {/* Bleed-off effect element */}
-                <div className="absolute -right-8 -top-8 w-32 h-32 bg-secondary/5 rounded-full group-hover:scale-150 transition-transform duration-700" />
+                <div className="absolute -right-12 -top-12 w-48 h-48 bg-secondary/5 rounded-full group-hover:scale-150 transition-transform duration-1000" />
                 
-                <div className="relative z-10">
-                  <h2 className="text-3xl font-headline text-on-surface mb-4 group-hover:text-secondary transition-colors">
+                <div className="relative z-10 space-y-6">
+                  <Heading variant="h2" className="text-3xl text-primary group-hover:text-secondary transition-colors tracking-tight">
                     {category
                       .replace(/_/g, " ")
                       .replace(/\b\w/g, (c) => c.toUpperCase())}
-                  </h2>
-                  <p className="text-on-surface-variant mb-8 font-body leading-relaxed">
+                  </Heading>
+                  <Text className="text-primary/60 font-medium leading-relaxed">
                     Browse our selection of{" "}
-                    {category.replace(/_/g, " ").toLowerCase()} products.
-                  </p>
+                    {category.replace(/_/g, " ").toLowerCase()} products curated for the modern home.
+                  </Text>
                 </div>
                 
-                <div className="relative z-10 mt-auto">
-                  <span className="inline-flex items-center text-secondary font-bold tracking-wider uppercase text-sm group-hover:gap-4 transition-all gap-2">
+                <div className="relative z-10 mt-12">
+                  <Button variant="ghost" className="p-0 text-secondary font-black tracking-widest uppercase text-xs group-hover:gap-6 transition-all gap-3 hover:bg-transparent">
                     Explore Collection
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </span>
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
                 </div>
-              </div>
+              </Card>
             </Link>
           ))}
         </div>
