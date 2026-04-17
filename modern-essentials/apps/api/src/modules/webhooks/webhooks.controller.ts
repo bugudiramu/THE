@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 import { WebhooksService } from "./webhooks.service";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils";
+import { RazorpayWebhookPayloadDto } from "./webhooks.dto";
 
 @Controller("webhooks")
 export class WebhooksController {
@@ -17,7 +18,7 @@ export class WebhooksController {
   @Post("razorpay")
   async handleRazorpayWebhook(
     @Req() req: RawBodyRequest<Request>,
-    @Body() payload: any,
+    @Body() payload: RazorpayWebhookPayloadDto,
     @Headers("x-razorpay-signature") signature: string,
     @Headers("x-razorpay-event-id") eventId: string,
   ) {

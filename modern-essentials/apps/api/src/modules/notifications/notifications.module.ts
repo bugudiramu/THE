@@ -6,12 +6,15 @@ import { MockEmailAdapter } from "./adapters/mock-email.adapter";
 import { WHATSAPP_ADAPTER } from "./adapters/whatsapp.adapter.interface";
 import { MockWhatsAppAdapter } from "./adapters/mock-whatsapp.adapter";
 
+import { NotificationsController } from "./notifications.controller";
+
 @Module({
   imports: [
     BullModule.registerQueue({
       name: "notifications",
     }),
   ],
+  controllers: [NotificationsController],
   providers: [
     NotificationsService,
     {
