@@ -14,7 +14,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   PAID: ["PICKED", "CANCELLED"],
   PICKED: ["PACKED", "CANCELLED"],
   PACKED: ["DISPATCHED", "CANCELLED"],
-  DISPATCHED: ["DELIVERED"],
+  DISPATCHED: ["DELIVERED", "CANCELLED"],
   // Terminal states: DELIVERED, CANCELLED, REFUNDED — no further transitions
 };
 
@@ -203,94 +203,154 @@ export class OrdersService {
     newStatus: OrderStatusAction,
     note?: string,
   ) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        user: {
-          select: {
-            phone: true,
-            email: true,
+    return await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          user: {
+            select: {
+              phone: true,
+              email: true,
+            },
           },
+          items: true,
         },
-      },
-    });
+      });
 
-    if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
-    }
+      if (!order) {
+        throw new NotFoundException(`Order ${orderId} not found`);
+      }
 
-    const currentStatus = order.status;
-    const allowedTransitions = VALID_TRANSITIONS[currentStatus];
+      const currentStatus = order.status;
+      const allowedTransitions = VALID_TRANSITIONS[currentStatus];
 
-    if (!allowedTransitions || !allowedTransitions.includes(newStatus)) {
-      throw new BadRequestException(
-        `Cannot transition from ${currentStatus} to ${newStatus}. ` +
-          `Allowed: ${allowedTransitions?.join(", ") || "none (terminal state)"}`,
-      );
-    }
+      if (!allowedTransitions || !allowedTransitions.includes(newStatus)) {
+        throw new BadRequestException(
+          `Cannot transition from ${currentStatus} to ${newStatus}. ` +
+            `Allowed: ${allowedTransitions?.join(", ") || "none (terminal state)"}`,
+        );
+      }
 
-    const updatedOrder = await this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: newStatus,
-      },
-      include: {
-        user: {
-          select: {
-            phone: true,
-            email: true,
+      // Handle Perishable Restock Trap (§4 in Silent Killers Architecture)
+      if (newStatus === "CANCELLED") {
+        if (currentStatus === "PAID" || currentStatus === "PENDING") {
+          // Rule: If status is PENDING or PAID (not yet picked), increment InventoryBatch.qty.
+          // Since we don't know the exact batch, we restock into the soonest expiring non-expired batch (FEFO).
+          for (const item of order.items) {
+            const batch = await tx.$queryRaw<any[]>`
+              SELECT id, qty FROM inventory_batches 
+              WHERE variant_id = ${item.variantId} 
+              AND status = 'AVAILABLE' 
+              AND qc_status = 'PASSED'
+              AND expires_at > NOW()
+              ORDER BY expires_at ASC
+              LIMIT 1
+              FOR UPDATE
+            `;
+
+            if (batch.length > 0) {
+              await tx.inventoryBatch.update({
+                where: { id: batch[0].id },
+                data: { qty: { increment: item.qty } },
+              });
+              this.logger.log(`Restocked ${item.qty} units of ${item.variantId} to batch ${batch[0].id}`);
+            } else {
+              // Fallback: If no valid batch found, log as wastage or alert
+              await tx.wastageLog.create({
+                data: {
+                  variantId: item.variantId,
+                  qty: item.qty,
+                  reason: "OTHER",
+                  loggedBy: "SYSTEM",
+                  notes: `Restock failed during cancellation of Order ${orderId}: No valid batches found.`,
+                },
+              });
+            }
+          }
+        } else if (
+          currentStatus === "PICKED" ||
+          currentStatus === "PACKED" ||
+          currentStatus === "DISPATCHED"
+        ) {
+          // Rule: If status is PICKED, PACKED, or DISPATCHED, log the item as wastage instead of restocking.
+          for (const item of order.items) {
+            await tx.wastageLog.create({
+              data: {
+                variantId: item.variantId,
+                qty: item.qty,
+                reason: "CUSTOMER_RETURN",
+                loggedBy: "SYSTEM",
+                notes: `Order ${orderId} cancelled from status ${currentStatus}. Perishable restock trap triggered.`,
+              },
+            });
+            this.logger.log(`Logged wastage for ${item.qty} units of ${item.variantId} due to cancellation from ${currentStatus}`);
+          }
+        }
+      }
+
+      const updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: newStatus,
+        },
+        include: {
+          user: {
+            select: {
+              phone: true,
+              email: true,
+            },
           },
-        },
-        items: {
-          include: {
-            variant: {
-              include: {
-                product: {
-                  select: { id: true, name: true },
+          items: {
+            include: {
+              variant: {
+                include: {
+                  product: {
+                    select: { id: true, name: true },
+                  },
                 },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    // TRIGGER NOTIFICATIONS based on the new status
-    try {
-      if (newStatus === "DISPATCHED" && order.user.email) {
-        await this.notificationsService.sendOrderDispatched(
-          order.user.email,
-          order.user.phone,
-          {
-            id: order.id,
-            userName: order.user.email.split("@")[0],
-            trackingUrl: "https://modernessentials.in/track/" + order.id,
-          },
+      // TRIGGER NOTIFICATIONS based on the new status
+      try {
+        if (newStatus === "DISPATCHED" && updatedOrder.user.email) {
+          await this.notificationsService.sendOrderDispatched(
+            updatedOrder.user.email,
+            updatedOrder.user.phone,
+            {
+              id: updatedOrder.id,
+              userName: updatedOrder.user.email.split("@")[0],
+              trackingUrl: "https://modernessentials.in/track/" + updatedOrder.id,
+            },
+          );
+        } else if (newStatus === "DELIVERED" && updatedOrder.user.email) {
+          await this.notificationsService.sendOrderDelivered(
+            updatedOrder.user.email,
+            updatedOrder.user.phone,
+            {
+              id: updatedOrder.id,
+              userName: updatedOrder.user.email.split("@")[0],
+            },
+          );
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        this.logger.error(
+          `Failed to trigger notification for order ${orderId}: ${errorMessage}`,
         );
-      } else if (newStatus === "DELIVERED" && order.user.email) {
-        await this.notificationsService.sendOrderDelivered(
-          order.user.email,
-          order.user.phone,
-          {
-            id: order.id,
-            userName: order.user.email.split("@")[0],
-          },
-        );
+        // We don't throw here to avoid rolling back the status update if notification fails
       }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      this.logger.error(
-        `Failed to trigger notification for order ${orderId}: ${errorMessage}`,
+
+      this.logger.log(
+        `Order ${orderId}: ${currentStatus} → ${newStatus}${note ? ` (${note})` : ""}`,
       );
-      // We don't throw here to avoid rolling back the status update if notification fails
-    }
 
-    this.logger.log(
-      `Order ${orderId}: ${currentStatus} → ${newStatus}${note ? ` (${note})` : ""}`,
-    );
-
-    return updatedOrder;
+      return updatedOrder;
+    });
   }
 
   /**

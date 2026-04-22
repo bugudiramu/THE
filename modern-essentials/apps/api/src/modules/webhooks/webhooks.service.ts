@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
 import { SubscriptionService, SubscriptionStatus } from "../subscription/subscription.service";
-import { Prisma } from "@modern-essentials/db";
 
 @Injectable()
 export class WebhooksService {

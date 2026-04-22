@@ -29,11 +29,13 @@ This document tracks "silent killers"—architectural issues that typically only
 
 ## 4. Perishable Restock Trap (Cancellations)
 **Risk:** Standard e-commerce logic simply adds cancelled items back to stock. For perishables (Eggs/Dairy), an item that has already been picked or dispatched cannot be safely restocked.
-- **Status:** ⏳ PENDING
-- **Plan:**
-  - Update cancellation logic in `OrdersService`.
-  - **Rule:** If `status` is `PENDING` or `PAID` (not yet picked), increment `InventoryBatch.qty`.
-  - **Rule:** If `status` is `PICKED`, `PACKED`, or `DISPATCHED`, log the item as `WastageReason.CUSTOMER_RETURN` or `EXPIRED` instead of restocking.
+- **Status:** ✅ RESOLVED
+- **Resolution:**
+  - Wrapped `OrdersService.transitionStatus` in a Prisma `$transaction`.
+  - **Restock Rule:** If an order is cancelled from `PENDING` or `PAID` (not yet picked), increment `InventoryBatch.qty` of the earliest expiring non-expired batch (`FEFO`).
+  - **Wastage Rule:** If an order is cancelled from `PICKED`, `PACKED`, or `DISPATCHED`, log the items as `WastageReason.CUSTOMER_RETURN` instead of restocking to maintain food safety and radical transparency.
+  - Added `CANCELLED` to allowed transitions from `DISPATCHED`.
+- **Verification:** Unit tests in `orders.service.spec.ts` verify atomic restocking for `PAID` orders and wastage logging for `PACKED`/`DISPATCHED` orders.
 
 ## 5. Subscription "Ghost" Renewals
 **Risk:** Background jobs crashing or overlapping, leading to duplicate subscription charges or skipped renewals.

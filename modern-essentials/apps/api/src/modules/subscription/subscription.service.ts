@@ -179,9 +179,19 @@ export class SubscriptionService {
     newStatus: SubscriptionStatus,
     metadata?: any,
     tx?: Prisma.TransactionClient,
-  ) {
-    const prisma = tx || this.prisma;
-    const sub = await prisma.subscription.findUnique({
+  ): Promise<any> {
+    // If not in a transaction, start one to ensure atomic lock + update
+    if (!tx) {
+      return this.prisma.$transaction((t) =>
+        this.transitionStatus(subscriptionId, newStatus, metadata, t),
+      );
+    }
+
+    // 1. Lock the record (Pessimistic Lock §5.5)
+    // This prevents "Ghost Renewals" by ensuring only one process can transition the status at a time.
+    await tx.$executeRaw`SELECT id FROM subscriptions WHERE id = ${subscriptionId} FOR UPDATE`;
+
+    const sub = await tx.subscription.findUnique({
       where: { id: subscriptionId },
       include: { variant: { include: { product: true } }, user: true },
     });
@@ -305,12 +315,22 @@ export class SubscriptionService {
         break;
     }
 
-    const updatedSub = await prisma.subscription.update({
-      where: { id: subscriptionId },
+    // 2. Atomic update with status check (RENEWAL_DUE -> ACTIVE §5.5)
+    // We use updateMany instead of update to add an extra check on currentStatus
+    const updateResult = await tx.subscription.updateMany({
+      where: { id: subscriptionId, status: currentStatus as any },
       data: updateData,
     });
 
-    await prisma.subscriptionEvent.create({
+    if (updateResult.count === 0) {
+      throw new BadRequestException(`Subscription status changed concurrently. Expected ${currentStatus}.`);
+    }
+
+    const updatedSub = await tx.subscription.findUnique({
+      where: { id: subscriptionId },
+    });
+
+    await tx.subscriptionEvent.create({
       data: {
         subscriptionId,
         eventType: this.mapStatusToEventType(newStatus) as any,
@@ -319,7 +339,7 @@ export class SubscriptionService {
       },
     });
 
-    return updatedSub;
+    return updatedSub!;
   }
 
   private async initiateDunning(subId: string) {

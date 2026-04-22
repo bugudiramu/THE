@@ -11,11 +11,12 @@ jest.mock("razorpay");
 describe("SubscriptionService FSM Transitions", () => {
   let service: SubscriptionService;
 
-  const mockPrisma = {
+  const mockPrisma: any = {
     subscription: {
       findUnique: jest.fn(),
       update: jest.fn(),
       create: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     subscriptionEvent: {
       create: jest.fn(),
@@ -26,6 +27,8 @@ describe("SubscriptionService FSM Transitions", () => {
     productVariant: {
       findUnique: jest.fn(),
     },
+    $transaction: jest.fn((cb: any) => cb(mockPrisma)),
+    $executeRaw: jest.fn().mockResolvedValue(1),
   };
 
   const mockNotificationsService = {
@@ -86,8 +89,8 @@ describe("SubscriptionService FSM Transitions", () => {
 
       await service.transitionStatus("sub_1", SubscriptionStatus.ACTIVE);
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.PENDING },
         data: expect.objectContaining({
           status: SubscriptionStatus.ACTIVE,
           nextBillingAt: expect.any(Date),
@@ -98,25 +101,25 @@ describe("SubscriptionService FSM Transitions", () => {
 
     it("Legal Transition: ACTIVE -> RENEWAL_DUE", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
-      mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.RENEWAL_DUE });
+      mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
 
       await service.transitionStatus("sub_1", SubscriptionStatus.RENEWAL_DUE);
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.ACTIVE },
         data: { status: SubscriptionStatus.RENEWAL_DUE },
       });
     });
 
     it("Legal Transition: RENEWAL_DUE -> ACTIVE", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.RENEWAL_DUE });
-      mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
+      mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
       mockPrisma.productVariant.findUnique.mockResolvedValue(mockSub.variant);
 
       await service.transitionStatus("sub_1", SubscriptionStatus.ACTIVE);
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.RENEWAL_DUE },
         data: expect.objectContaining({
           status: SubscriptionStatus.ACTIVE,
           nextBillingAt: expect.any(Date),
@@ -128,12 +131,12 @@ describe("SubscriptionService FSM Transitions", () => {
 
     it("Legal Transition: RENEWAL_DUE -> DUNNING", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.RENEWAL_DUE });
-      mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.DUNNING });
+      mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
 
       await service.transitionStatus("sub_1", SubscriptionStatus.DUNNING);
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.RENEWAL_DUE },
         data: expect.objectContaining({
           status: SubscriptionStatus.DUNNING,
           dunningAttempt: 1,
@@ -144,13 +147,13 @@ describe("SubscriptionService FSM Transitions", () => {
 
     it("Legal Transition: DUNNING -> ACTIVE", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.DUNNING });
-      mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
+      mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
       mockPrisma.productVariant.findUnique.mockResolvedValue(mockSub.variant);
 
       await service.transitionStatus("sub_1", SubscriptionStatus.ACTIVE);
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.DUNNING },
         data: expect.objectContaining({
           status: SubscriptionStatus.ACTIVE,
           nextBillingAt: expect.any(Date),
@@ -162,12 +165,12 @@ describe("SubscriptionService FSM Transitions", () => {
 
     it("Legal Transition: DUNNING -> CANCELLED", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.DUNNING });
-      mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.CANCELLED });
+      mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
 
       await service.transitionStatus("sub_1", SubscriptionStatus.CANCELLED, { reason: "Dunning failed" });
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.DUNNING },
         data: expect.objectContaining({
           status: SubscriptionStatus.CANCELLED,
           cancelReason: "Dunning failed",
@@ -177,13 +180,13 @@ describe("SubscriptionService FSM Transitions", () => {
 
     it("Legal Transition: ACTIVE -> PAUSED", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
-      mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.PAUSED });
+      mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
 
       const pauseUntil = new Date();
       await service.transitionStatus("sub_1", SubscriptionStatus.PAUSED, { pauseUntil });
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.ACTIVE },
         data: expect.objectContaining({
           status: SubscriptionStatus.PAUSED,
           pauseUntil,
@@ -193,12 +196,12 @@ describe("SubscriptionService FSM Transitions", () => {
 
     it("Legal Transition: PAUSED -> ACTIVE", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.PAUSED });
-      mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
+      mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
 
       await service.transitionStatus("sub_1", SubscriptionStatus.ACTIVE);
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.PAUSED },
         data: expect.objectContaining({
           status: SubscriptionStatus.ACTIVE,
           pauseUntil: null,
@@ -208,12 +211,12 @@ describe("SubscriptionService FSM Transitions", () => {
 
     it("Legal Transition: ACTIVE -> CANCELLED", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
-      mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.CANCELLED });
+      mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
 
       await service.transitionStatus("sub_1", SubscriptionStatus.CANCELLED, { reason: "User request" });
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-        where: { id: "sub_1" },
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
+        where: { id: "sub_1", status: SubscriptionStatus.ACTIVE },
         data: expect.objectContaining({
           status: SubscriptionStatus.CANCELLED,
           cancelReason: "User request",
