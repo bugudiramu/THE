@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import Razorpay from "razorpay";
 import { PrismaService } from "../../common/prisma.service";
+import { Prisma, OrderType } from "@modern-essentials/db";
 import {
   AdminOverrideDto,
   CancelSubscriptionDto,
@@ -12,7 +13,6 @@ import {
   SubscriptionResponseDto,
   SwapProductDto,
 } from "./subscription.dto";
-import { OrderType } from "@modern-essentials/db";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -178,8 +178,10 @@ export class SubscriptionService {
     subscriptionId: string,
     newStatus: SubscriptionStatus,
     metadata?: any,
+    tx?: Prisma.TransactionClient,
   ) {
-    const sub = await this.prisma.subscription.findUnique({
+    const prisma = tx || this.prisma;
+    const sub = await prisma.subscription.findUnique({
       where: { id: subscriptionId },
       include: { variant: { include: { product: true } }, user: true },
     });
@@ -212,20 +214,20 @@ export class SubscriptionService {
         if (currentStatus === SubscriptionStatus.PENDING) {
           // Transition 1: PENDING -> ACTIVE (on subscription.activated)
           updateData.nextBillingAt = this.calculateNextBillingDate(sub.frequency as any);
-          await this.createFirstOrder(sub);
+          await this.createFirstOrder(sub, tx);
           // Send welcome WhatsApp (placeholder)
         } else if (currentStatus === SubscriptionStatus.RENEWAL_DUE) {
           // Transition 3: RENEWAL_DUE -> ACTIVE (on subscription.charged)
           updateData.nextBillingAt = this.calculateNextBillingDate(sub.frequency as any);
           updateData.dunningAttempt = 0;
           updateData.dunningStartedAt = null;
-          await this.createRenewalOrder(sub);
+          await this.createRenewalOrder(sub, tx);
         } else if (currentStatus === SubscriptionStatus.DUNNING) {
           // Transition 5: DUNNING -> ACTIVE (retry success)
           updateData.nextBillingAt = this.calculateNextBillingDate(sub.frequency as any);
           updateData.dunningAttempt = 0;
           updateData.dunningStartedAt = null;
-          await this.createRenewalOrder(sub);
+          await this.createRenewalOrder(sub, tx);
         } else if (currentStatus === SubscriptionStatus.PAUSED) {
           // Transition 8: PAUSED -> ACTIVE
           updateData.pauseUntil = null;
@@ -303,12 +305,12 @@ export class SubscriptionService {
         break;
     }
 
-    const updatedSub = await this.prisma.subscription.update({
+    const updatedSub = await prisma.subscription.update({
       where: { id: subscriptionId },
       data: updateData,
     });
 
-    await this.prisma.subscriptionEvent.create({
+    await prisma.subscriptionEvent.create({
       data: {
         subscriptionId,
         eventType: this.mapStatusToEventType(newStatus) as any,
@@ -486,8 +488,9 @@ export class SubscriptionService {
     return this.mapSubscriptionToResponse(newSubscription, variant);
   }
 
-  private async createFirstOrder(sub: any) {
-    return this.prisma.order.create({
+  private async createFirstOrder(sub: any, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prisma;
+    return prisma.order.create({
       data: {
         userId: sub.userId,
         subscriptionId: sub.id,
@@ -511,15 +514,16 @@ export class SubscriptionService {
     });
   }
 
-  async createRenewalOrder(sub: any) {
+  async createRenewalOrder(sub: any, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prisma;
     // Refresh product price to current price (per §5.2)
-    const variant = await this.prisma.productVariant.findUnique({
+    const variant = await prisma.productVariant.findUnique({
       where: { id: sub.variantId },
     });
 
     if (!variant) throw new Error("Product variant not found for renewal order");
 
-    return this.prisma.order.create({
+    return prisma.order.create({
       data: {
         userId: sub.userId,
         subscriptionId: sub.id,

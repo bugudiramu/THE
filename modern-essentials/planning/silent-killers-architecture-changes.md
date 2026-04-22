@@ -12,10 +12,13 @@ This document tracks "silent killers"—architectural issues that typically only
 
 ## 2. Webhook Idempotency (Double-Processing)
 **Risk:** Razorpay or other providers sending the same event multiple times, leading to duplicate orders, double charges, or duplicate reward points.
-- **Status:** ⏳ PENDING
-- **Plan:**
-  - Ensure the `webhook_events` check and the actual business logic (order creation, ledger updates) are wrapped in a single database transaction.
-  - Implement a strict `processed: true` flag update as the final step of the transaction.
+- **Status:** ✅ RESOLVED
+- **Resolution:**
+  - Wrapped `handleRazorpayEvent` in a Prisma `$transaction`.
+  - Implemented **Pessimistic Locking** (`FOR UPDATE`) on the `WebhookEvent` record during processing.
+  - Modified `SubscriptionService.transitionStatus` to accept an optional transaction client to ensure business logic and idempotency state are atomic.
+  - Explicitly marked `processed: true` as the final step before transaction commit.
+- **Verification:** `WebhooksService` and `SubscriptionService` updated and verified via API tests.
 
 ## 3. Reward Points "Double-Spend"
 **Risk:** A user attempting to use their points on two different devices/browsers at the exact same millisecond.

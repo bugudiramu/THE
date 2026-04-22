@@ -23,7 +23,7 @@ describe("SubscriptionService FSM Transitions", () => {
     order: {
       create: jest.fn(),
     },
-    product: {
+    productVariant: {
       findUnique: jest.fn(),
     },
   };
@@ -56,6 +56,8 @@ describe("SubscriptionService FSM Transitions", () => {
     (Razorpay as any).mockImplementation(() => ({
       subscriptions: {
         cancel: jest.fn().mockResolvedValue({}),
+        resume: jest.fn().mockResolvedValue({}),
+        pause: jest.fn().mockResolvedValue({}),
       },
     }));
   });
@@ -65,9 +67,13 @@ describe("SubscriptionService FSM Transitions", () => {
     status: SubscriptionStatus.PENDING,
     frequency: "WEEKLY",
     userId: "user_1",
-    productId: "prod_1",
+    variantId: "var_1",
     razorpaySubscriptionId: "rzp_sub_1",
-    product: { id: "prod_1", subPrice: 10000 },
+    variant: { 
+      id: "var_1", 
+      subPrice: 10000,
+      product: { id: "prod_1", name: "Test Eggs" }
+    },
     user: { email: "test@example.com", phone: "1234567890" },
     quantity: 1,
   };
@@ -76,7 +82,7 @@ describe("SubscriptionService FSM Transitions", () => {
     it("Legal Transition: PENDING -> ACTIVE", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue(mockSub);
       mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
-      mockPrisma.product.findUnique.mockResolvedValue(mockSub.product);
+      mockPrisma.productVariant.findUnique.mockResolvedValue(mockSub.variant);
 
       await service.transitionStatus("sub_1", SubscriptionStatus.ACTIVE);
 
@@ -105,7 +111,7 @@ describe("SubscriptionService FSM Transitions", () => {
     it("Legal Transition: RENEWAL_DUE -> ACTIVE", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.RENEWAL_DUE });
       mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
-      mockPrisma.product.findUnique.mockResolvedValue(mockSub.product);
+      mockPrisma.productVariant.findUnique.mockResolvedValue(mockSub.variant);
 
       await service.transitionStatus("sub_1", SubscriptionStatus.ACTIVE);
 
@@ -139,7 +145,7 @@ describe("SubscriptionService FSM Transitions", () => {
     it("Legal Transition: DUNNING -> ACTIVE", async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.DUNNING });
       mockPrisma.subscription.update.mockResolvedValue({ ...mockSub, status: SubscriptionStatus.ACTIVE });
-      mockPrisma.product.findUnique.mockResolvedValue(mockSub.product);
+      mockPrisma.productVariant.findUnique.mockResolvedValue(mockSub.variant);
 
       await service.transitionStatus("sub_1", SubscriptionStatus.ACTIVE);
 
