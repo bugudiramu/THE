@@ -288,6 +288,7 @@ docker compose up -d
 cp .env.example .env
 
 # Fill in values - see Section 5.5 for full env var catalogue
+
 # Note: A single .env at the root is shared across all apps via symlinks.
 
 - **Run database migrations + seed**
@@ -318,27 +319,27 @@ _A single `.env` file at the repository root contains all configuration for all 
 
 ### **Repository Root: .env**
 
-| **Variable**             | **Description**                   | **Where to get it**                      |
-| ------------------------ | --------------------------------- | ---------------------------------------- |
-| DATABASE_URL             | PostgreSQL connection string      | Railway dashboard → Postgres → Connect   |
-| REDIS_URL                | Upstash Redis connection URL      | Upstash console → REST URL               |
-| CLERK_SECRET_KEY         | Server-side Clerk API key         | Clerk dashboard → API Keys               |
-| CLERK_WEBHOOK_SECRET     | Clerk webhook signing secret      | Clerk dashboard → Webhooks               |
-| RAZORPAY_KEY_ID          | Razorpay API key ID               | Razorpay dashboard → Settings → API Keys |
-| RAZORPAY_KEY_SECRET      | Razorpay API secret               | Razorpay dashboard → Settings → API Keys |
-| RAZORPAY_WEBHOOK_SECRET  | Razorpay webhook signature secret | Razorpay dashboard → Webhooks            |
-| RESEND_API_KEY           | Resend transactional email key    | Resend dashboard → API Keys              |
-| INTERAKT_API_KEY         | Interakt WhatsApp API key         | Interakt dashboard → Developer → API Key |
-| SHADOWFAX_API_KEY        | Shadowfax shipping API key        | Shadowfax partner portal                 |
-| CLOUDFLARE_R2_ACCESS_KEY | R2 storage access key             | Cloudflare → R2 → Manage API Tokens      |
-| CLOUDFLARE_R2_SECRET_KEY | R2 storage secret key             | Cloudflare → R2 → Manage API Tokens      |
-| CLOUDFLARE_R2_BUCKET     | R2 bucket name (e.g. me-assets)   | Cloudflare → R2                          |
-| CLOUDFLARE_R2_ENDPOINT   | R2 S3-compatible endpoint URL     | Cloudflare → R2 → Bucket details         |
-| SENTRY_DSN               | Sentry error reporting DSN        | Sentry project → Settings → Client Keys  |
-| NODE_ENV                 | development / production / test   | Set manually per environment             |
-| PORT                     | API server port (default: 4000)   | 4000 local, set by Railway in prod       |
-| FRONTEND_URL             | Storefront origin for CORS        | <http://localhost:3000> local            |
-| ADMIN_URL                | Admin dashboard origin for CORS   | <http://localhost:3001> local            |
+| **Variable**            | **Description**                   | **Where to get it**                      |
+| ----------------------- | --------------------------------- | ---------------------------------------- |
+| DATABASE_URL            | PostgreSQL connection string      | Railway dashboard → Postgres → Connect   |
+| REDIS_URL               | Upstash Redis connection URL      | Upstash console → REST URL               |
+| CLERK_SECRET_KEY        | Server-side Clerk API key         | Clerk dashboard → API Keys               |
+| CLERK_WEBHOOK_SECRET    | Clerk webhook signing secret      | Clerk dashboard → Webhooks               |
+| RAZORPAY_KEY_ID         | Razorpay API key ID               | Razorpay dashboard → Settings → API Keys |
+| RAZORPAY_KEY_SECRET     | Razorpay API secret               | Razorpay dashboard → Settings → API Keys |
+| RAZORPAY_WEBHOOK_SECRET | Razorpay webhook signature secret | Razorpay dashboard → Webhooks            |
+| RESEND_API_KEY          | Resend transactional email key    | Resend dashboard → API Keys              |
+| INTERAKT_API_KEY        | Interakt WhatsApp API key         | Interakt dashboard → Developer → API Key |
+| SHADOWFAX_API_KEY       | Shadowfax shipping API key        | Shadowfax partner portal                 |
+| R2_ACCESS_KEY_ID        | R2 storage access key             | Cloudflare → R2 → Manage API Tokens      |
+| R2_SECRET_ACCESS_KEY    | R2 storage secret key             | Cloudflare → R2 → Manage API Tokens      |
+| R2_BUCKET_NAME          | R2 bucket name (e.g. me-assets)   | Cloudflare → R2                          |
+| R2_ENDPOINT             | R2 S3-compatible endpoint URL     | Cloudflare → R2 → Bucket details         |
+| SENTRY_DSN              | Sentry error reporting DSN        | Sentry project → Settings → Client Keys  |
+| NODE_ENV                | development / production / test   | Set manually per environment             |
+| PORT                    | API server port (default: 4000)   | 4000 local, set by Railway in prod       |
+| FRONTEND_URL            | Storefront origin for CORS        | <http://localhost:3000> local            |
+| ADMIN_URL               | Admin dashboard origin for CORS   | <http://localhost:3001> local            |
 
 | **Next.js Public Variables**      | **Description**                                  | **Where to get it**                                 |
 | --------------------------------- | ------------------------------------------------ | --------------------------------------------------- |
@@ -828,7 +829,7 @@ Update it when decisions change. Add to the decision log on every major call.
 
 Version 2.0 - March 2026 - Modern Essentials
 
-
 ### Missing pieces
+
 - DAILY subscriptions
 - Integrating zepto, instamart, blinkit and other partners for distribution

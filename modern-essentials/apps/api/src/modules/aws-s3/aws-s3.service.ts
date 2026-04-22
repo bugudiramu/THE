@@ -1,4 +1,8 @@
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "crypto";
 
@@ -10,10 +14,10 @@ export class AwsS3Service {
   constructor() {
     this.s3Client = new S3Client({
       region: "auto",
-      endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
+      endpoint: process.env.R2_ENDPOINT,
       credentials: {
-        accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY!,
-        secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_KEY!,
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
       },
       forcePathStyle: true,
     });
@@ -31,14 +35,14 @@ export class AwsS3Service {
     try {
       await this.s3Client.send(
         new PutObjectCommand({
-          Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
+          Bucket: process.env.R2_BUCKET_NAME!,
           Key: key,
           Body: file.buffer,
           ContentType: file.mimetype,
         }),
       );
 
-      const publicUrl = `${process.env.CLOUDFLARE_R2_ENDPOINT}/${process.env.CLOUDFLARE_R2_BUCKET}/${key}`;
+      const publicUrl = `${process.env.R2_ENDPOINT}/${process.env.R2_BUCKET_NAME}/${key}`;
       this.logger.log(`File uploaded successfully: ${publicUrl}`);
 
       return publicUrl;
@@ -54,7 +58,7 @@ export class AwsS3Service {
     try {
       await this.s3Client.send(
         new DeleteObjectCommand({
-          Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
+          Bucket: process.env.R2_BUCKET_NAME!,
           Key: key,
         }),
       );
