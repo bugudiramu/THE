@@ -34,11 +34,11 @@ export class InventoryController {
 
   @Get("batches")
   async getBatches(
-    @Query("productId") productId?: string,
+    @Query("variantId") variantId?: string,
     @Query("status") status?: string,
     @Query("qcStatus") qcStatus?: string,
   ) {
-    return this.inventoryService.getBatches({ productId, status, qcStatus });
+    return this.inventoryService.getBatches({ variantId, status, qcStatus });
   }
 
   @Post("grn")

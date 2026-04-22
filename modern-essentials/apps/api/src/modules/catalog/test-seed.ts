@@ -9,11 +9,8 @@ export class TestSeedService {
   async createSampleProduct() {
     const product = await this.prisma.product.create({
       data: {
-        sku: "EGG001",
         name: "Fresh Regular Eggs",
         category: Category.REGULAR_EGGS,
-        price: 12000, // ₹120.00
-        subPrice: 10800, // ₹108.00
         description:
           "Fresh farm eggs from free-range chickens. Perfect for breakfast and baking.",
         seoTitle: "Fresh Regular Eggs - Farm Fresh",
@@ -28,9 +25,20 @@ export class TestSeedService {
             },
           ],
         },
+        variants: {
+          create: [
+            {
+              sku: "EGG001",
+              packSize: 6,
+              price: 12000, // ₹120.00
+              subPrice: 10800, // ₹108.00
+            },
+          ],
+        },
       },
       include: {
         images: true,
+        variants: true,
       },
     });
 
@@ -41,11 +49,8 @@ export class TestSeedService {
     const products = await Promise.all([
       this.prisma.product.create({
         data: {
-          sku: "EGG002",
           name: "Organic Brown Eggs",
           category: Category.BROWN_EGGS,
-          price: 15000, // ₹150.00
-          subPrice: 13500, // ₹135.00
           description:
             "Premium organic brown eggs from certified organic farms.",
           seoTitle: "Organic Brown Eggs - Premium Quality",
@@ -60,18 +65,26 @@ export class TestSeedService {
               },
             ],
           },
+          variants: {
+            create: [
+              {
+                sku: "EGG002",
+                packSize: 6,
+                price: 15000, // ₹150.00
+                subPrice: 13500, // ₹135.00
+              },
+            ],
+          },
         },
         include: {
           images: true,
+          variants: true,
         },
       }),
       this.prisma.product.create({
         data: {
-          sku: "EGG003",
           name: "High-Protein Eggs",
           category: Category.HIGH_PROTEIN_EGGS,
-          price: 18000, // ₹180.00
-          subPrice: 16200, // ₹162.00
           description:
             "Extra high-protein eggs with enhanced nutritional value. Perfect for fitness enthusiasts.",
           seoTitle: "High-Protein Eggs - Enhanced Nutrition",
@@ -86,9 +99,20 @@ export class TestSeedService {
               },
             ],
           },
+          variants: {
+            create: [
+              {
+                sku: "EGG003",
+                packSize: 6,
+                price: 18000, // ₹180.00
+                subPrice: 16200, // ₹162.00
+              },
+            ],
+          },
         },
         include: {
           images: true,
+          variants: true,
         },
       }),
     ]);

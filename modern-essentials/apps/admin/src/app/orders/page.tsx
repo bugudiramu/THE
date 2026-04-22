@@ -31,7 +31,11 @@ async function getOrders(status?: string) {
       },
       items: {
         include: {
-          product: { select: { id: true, name: true, sku: true } },
+          variant: {
+            include: {
+              product: { select: { id: true, name: true } },
+            },
+          },
         },
       },
     },
@@ -142,9 +146,9 @@ export default async function OrdersPage({
                       </td>
                       <td className="px-6 py-6">
                         <p className="text-sm font-bold text-foreground">
-                          {order.user.phone}
+                          {order.user?.phone || "N/A"}
                         </p>
-                        {order.user.email && (
+                        {order.user?.email && (
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {order.user.email}
                           </p>
@@ -152,7 +156,7 @@ export default async function OrdersPage({
                       </td>
                       <td className="px-6 py-6 text-sm text-muted-foreground max-w-xs truncate">
                         {order.items
-                          .map((i) => `${i.product.name} ×${i.qty}`)
+                          .map((i) => `${i.variant.product.name} ×${i.qty}`)
                           .join(", ")}
                       </td>
                       <td className="px-6 py-6 text-sm font-bold text-foreground">

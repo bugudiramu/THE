@@ -96,11 +96,11 @@ export default function CartSidebar() {
                     >
                       {/* Product Image */}
                       <div className="flex-shrink-0 w-24 h-24 bg-surface-container-high rounded-2xl overflow-hidden relative shadow-sm">
-                        {item.product.images && item.product.images.length > 0 ? (
+                        {item.variant?.product?.images && item.variant.product.images.length > 0 ? (
                           <Image
-                            src={item.product.images[0].url}
+                            src={item.variant.product.images[0].url}
                             alt={
-                              item.product.images[0].alt || item.product.name
+                              item.variant.product.images[0].alt || item.variant.product.name
                             }
                             fill
                             className="object-cover transition-transform group-hover:scale-110 duration-700"
@@ -117,7 +117,7 @@ export default function CartSidebar() {
                         <div className="flex justify-between items-start gap-4">
                           <div className="space-y-2">
                               <Heading variant="h5" className="text-lg text-primary line-clamp-2 leading-tight group-hover:text-secondary transition-colors">
-                                {item.product.name}
+                                {item.variant?.product?.name || 'Loading item...'} ({item.variant?.packSize || 0}pk)
                               </Heading>
                               <div className="flex flex-wrap gap-2">
                                 {item.isSubscription ? (

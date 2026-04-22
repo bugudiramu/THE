@@ -25,7 +25,7 @@ export class CreateOrderDto {
 
 export class OrderItemDto {
   @IsString()
-  productId!: string;
+  variantId!: string;
 
   @IsInt()
   @IsPositive()

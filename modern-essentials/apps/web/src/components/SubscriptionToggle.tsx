@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 interface SubscriptionToggleProps {
   price: number;
   subPrice?: number;
-  onSubscriptionChange: (isSubscription: boolean, frequency: string) => void;
+  onSubscriptionChange: (isSubscription: boolean, frequency: string, durationMonths: number) => void;
 }
 
 export default function SubscriptionToggle({
@@ -30,6 +30,7 @@ export default function SubscriptionToggle({
 }: SubscriptionToggleProps) {
   const [isSubscription, setIsSubscription] = useState("true");
   const [frequency, setFrequency] = useState("WEEKLY");
+  const [durationMonths, setDurationMonths] = useState(1);
 
   const calculateSavings = () => {
     if (!subPrice) return 0;
@@ -39,14 +40,23 @@ export default function SubscriptionToggle({
   const handleToggle = (val: string) => {
     setIsSubscription(val);
     const subscribe = val === "true";
-    onSubscriptionChange(subscribe, subscribe ? frequency : "");
+    onSubscriptionChange(subscribe, subscribe ? frequency : "", subscribe ? durationMonths : 0);
   };
 
   const handleFrequencyChange = (newFrequency: string | null) => {
     if (!newFrequency) return;
     setFrequency(newFrequency);
     if (isSubscription === "true") {
-      onSubscriptionChange(true, newFrequency);
+      onSubscriptionChange(true, newFrequency, durationMonths);
+    }
+  };
+
+  const handleDurationChange = (newDuration: string | null) => {
+    if (!newDuration) return;
+    const months = parseInt(newDuration);
+    setDurationMonths(months);
+    if (isSubscription === "true") {
+      onSubscriptionChange(true, frequency, months);
     }
   };
 
@@ -112,21 +122,37 @@ export default function SubscriptionToggle({
         </div>
       </RadioGroup>
 
-      {/* Frequency Selector */}
+      {/* Frequency & Duration Selectors */}
       {isSubscription === "true" && (
-        <Card className="flex items-center gap-4 bg-surface/50 p-4 rounded-2xl border-none shadow-inner animate-in fade-in slide-in-from-top-2 duration-500">
-          <Label className="text-[10px] uppercase tracking-widest font-black text-primary/40 whitespace-nowrap">Deliver every:</Label>
-          <Select value={frequency} onValueChange={handleFrequencyChange}>
-            <SelectTrigger className="w-full bg-surface border-none rounded-xl h-12 px-6 font-bold text-xs uppercase tracking-widest shadow-sm hover:bg-white transition-colors">
-              <SelectValue placeholder="Select frequency" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-none shadow-2xl p-1">
-              <SelectItem value="WEEKLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Weekly</SelectItem>
-              <SelectItem value="FORTNIGHTLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Fortnightly</SelectItem>
-              <SelectItem value="MONTHLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Monthly</SelectItem>
-            </SelectContent>
-          </Select>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-500">
+          <Card className="flex flex-col gap-2 bg-surface/50 p-4 rounded-2xl border-none shadow-inner">
+            <Label className="text-[10px] uppercase tracking-widest font-black text-primary/40">Deliver every:</Label>
+            <Select value={frequency} onValueChange={handleFrequencyChange}>
+              <SelectTrigger className="w-full bg-surface border-none rounded-xl h-12 px-6 font-bold text-xs uppercase tracking-widest shadow-sm hover:bg-white transition-colors">
+                <SelectValue placeholder="Frequency" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-none shadow-2xl p-1">
+                <SelectItem value="WEEKLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Weekly</SelectItem>
+                <SelectItem value="FORTNIGHTLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Fortnightly</SelectItem>
+                <SelectItem value="MONTHLY" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
+          </Card>
+
+          <Card className="flex flex-col gap-2 bg-surface/50 p-4 rounded-2xl border-none shadow-inner">
+            <Label className="text-[10px] uppercase tracking-widest font-black text-primary/40">Plan Duration:</Label>
+            <Select value={durationMonths.toString()} onValueChange={handleDurationChange}>
+              <SelectTrigger className="w-full bg-surface border-none rounded-xl h-12 px-6 font-bold text-xs uppercase tracking-widest shadow-sm hover:bg-white transition-colors">
+                <SelectValue placeholder="Duration" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-none shadow-2xl p-1">
+                <SelectItem value="1" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">1 Month</SelectItem>
+                <SelectItem value="2" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">2 Months</SelectItem>
+                <SelectItem value="3" className="text-[10px] uppercase tracking-widest font-black py-3 rounded-lg">3 Months</SelectItem>
+              </SelectContent>
+            </Select>
+          </Card>
+        </div>
       )}
     </div>
   );

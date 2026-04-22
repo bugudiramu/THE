@@ -121,7 +121,7 @@ function CheckoutContent() {
             state: values.state,
             pincode: values.postalCode,
             items: items.map((item) => ({
-              productId: item.productId,
+              variantId: item.variantId,
               quantity: item.quantity,
               price: item.priceSnapshot,
               isSubscription: item.isSubscription,
@@ -171,7 +171,7 @@ function CheckoutContent() {
                 state: values.state,
                 pincode: values.postalCode,
                 items: items.map((item) => ({
-                  productId: item.productId,
+                  variantId: item.variantId,
                   quantity: item.quantity,
                   price: item.priceSnapshot,
                   isSubscription: item.isSubscription,
@@ -455,14 +455,14 @@ function CheckoutContent() {
                   <div key={item.id} className="flex justify-between items-start gap-4">
                     <div className="flex gap-4 flex-1">
                       <AspectRatio ratio={1} className="w-14 rounded-xl overflow-hidden bg-surface shadow-inner border border-primary/5">
-                        {item.product.images.length > 0 ? (
-                          <Image src={item.product.images[0].url} alt="" fill className="object-cover" />
+                        {item.variant.product.images.length > 0 ? (
+                          <Image src={item.variant.product.images[0].url} alt="" fill className="object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-4 h-4 text-primary/10" /></div>
                         )}
                       </AspectRatio>
                       <div className="space-y-0.5">
-                        <Heading variant="h5" className="text-primary text-sm line-clamp-1 font-bold">{item.product.name}</Heading>
+                        <Heading variant="h5" className="text-primary text-sm line-clamp-1 font-bold">{item.variant.product.name} ({item.variant.packSize}pk)</Heading>
                         <Text variant="xs" className="text-primary/40 font-bold uppercase text-[9px]">Qty: {item.quantity}</Text>
                       </div>
                     </div>

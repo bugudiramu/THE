@@ -76,24 +76,25 @@ export class SubscriptionService {
     userId: string,
     createDto: CreateSubscriptionDto,
   ): Promise<SubscriptionResponseDto> {
-    const product = await this.prisma.product.findUnique({
-      where: { id: createDto.productId },
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: createDto.variantId },
+      include: { product: true },
     });
 
-    if (!product) {
-      throw new NotFoundException("Product not found");
+    if (!variant) {
+      throw new NotFoundException("Product variant not found");
     }
 
-    if (!product.subPrice) {
+    if (!variant.subPrice) {
       throw new BadRequestException("This product is not available for subscription");
     }
 
     const frequency = (createDto.frequency || SubscriptionFrequency.WEEKLY) as SubscriptionFrequency;
-    const amount = product.subPrice * createDto.quantity;
+    const amount = variant.subPrice * createDto.quantity;
 
     try {
       // 1. Find or create Razorpay Plan
-      const razorpayPlanId = await this.getOrCreateRazorpayPlan(product.id, amount, frequency);
+      const razorpayPlanId = await this.getOrCreateRazorpayPlan(variant.id, amount, frequency);
 
       // 2. Create Subscription in Razorpay
       const razorpaySubscription = await this.razorpay.subscriptions.create({
@@ -102,7 +103,7 @@ export class SubscriptionService {
         total_count: frequency === SubscriptionFrequency.WEEKLY ? 52 : frequency === SubscriptionFrequency.FORTNIGHTLY ? 26 : 12,
         notes: {
           userId,
-          productId: product.id,
+          variantId: variant.id,
           quantity: createDto.quantity.toString(),
         },
       });
@@ -111,7 +112,7 @@ export class SubscriptionService {
       const subscription = await this.prisma.subscription.create({
         data: {
           userId,
-          productId: product.id,
+          variantId: variant.id,
           planId: await this.prisma.subscriptionPlan.findFirst({
             where: { razorpayPlanId },
             select: { id: true },
@@ -134,12 +135,12 @@ export class SubscriptionService {
         data: {
           subscriptionId: subscription.id,
           eventType: SubscriptionEventType.CREATED as any,
-          description: `Subscription created for ${product.name}, awaiting mandate authentication.`,
+          description: `Subscription created for ${variant.product.name} (${variant.sku}), awaiting mandate authentication.`,
           metadata: { razorpaySubscriptionId: razorpaySubscription.id },
         },
       });
 
-      const response = this.mapSubscriptionToResponse(subscription, product);
+      const response = this.mapSubscriptionToResponse(subscription, variant);
       response.razorpaySubscriptionId = razorpaySubscription.id;
       response.shortUrl = razorpaySubscription.short_url;
       
@@ -153,24 +154,24 @@ export class SubscriptionService {
   async findUserSubscriptions(userId: string) {
     const subscriptions = await this.prisma.subscription.findMany({
       where: { userId },
-      include: { product: true },
+      include: { variant: { include: { product: true } } },
       orderBy: { createdAt: "desc" },
     });
 
-    return subscriptions.map((sub) => this.mapSubscriptionToResponse(sub, sub.product));
+    return subscriptions.map((sub) => this.mapSubscriptionToResponse(sub, sub.variant));
   }
 
   async getSubscriptionById(userId: string, id: string) {
     const subscription = await this.prisma.subscription.findFirst({
       where: { id, userId },
-      include: { product: true },
+      include: { variant: { include: { product: true } } },
     });
 
     if (!subscription) {
       throw new NotFoundException("Subscription not found");
     }
 
-    return this.mapSubscriptionToResponse(subscription, subscription.product);
+    return this.mapSubscriptionToResponse(subscription, subscription.variant);
   }
 
   async transitionStatus(
@@ -180,7 +181,7 @@ export class SubscriptionService {
   ) {
     const sub = await this.prisma.subscription.findUnique({
       where: { id: subscriptionId },
-      include: { product: true, user: true },
+      include: { variant: { include: { product: true } }, user: true },
     });
 
     if (!sub) {
@@ -354,7 +355,7 @@ export class SubscriptionService {
   async processDunningAttempt(subId: string, attempt: number) {
     const sub = await this.prisma.subscription.findUnique({
       where: { id: subId },
-      include: { user: true, product: true },
+      include: { user: true, variant: { include: { product: true } } },
     });
 
     if (!sub || sub.status !== SubscriptionStatus.DUNNING) {
@@ -422,7 +423,7 @@ export class SubscriptionService {
   async reactivate(subId: string, userId: string) {
     const sub = await this.prisma.subscription.findFirst({
       where: { id: subId, userId },
-      include: { product: true },
+      include: { variant: { include: { product: true } } },
     });
 
     if (!sub) throw new NotFoundException("Subscription not found");
@@ -433,10 +434,10 @@ export class SubscriptionService {
     this.logger.log(`Reactivating subscription ${subId} for user ${userId}`);
 
     // Create new Razorpay subscription
-    const product = sub.product;
-    const amount = product.subPrice * sub.quantity;
+    const variant = sub.variant;
+    const amount = variant.subPrice * sub.quantity;
     const frequency = sub.frequency as unknown as SubscriptionFrequency;
-    const razorpayPlanId = await this.getOrCreateRazorpayPlan(product.id, amount, frequency);
+    const razorpayPlanId = await this.getOrCreateRazorpayPlan(variant.id, amount, frequency);
 
     const razorpaySubscription = await this.razorpay.subscriptions.create({
       plan_id: razorpayPlanId,
@@ -444,7 +445,7 @@ export class SubscriptionService {
       total_count: frequency === SubscriptionFrequency.WEEKLY ? 52 : frequency === SubscriptionFrequency.FORTNIGHTLY ? 26 : 12,
       notes: {
         userId,
-        productId: product.id,
+        variantId: variant.id,
         quantity: sub.quantity.toString(),
         reactivatedFrom: sub.id,
       },
@@ -458,7 +459,7 @@ export class SubscriptionService {
     const newSubscription = await this.prisma.subscription.create({
       data: {
         userId,
-        productId: product.id,
+        variantId: variant.id,
         planId: sub.planId,
         quantity: sub.quantity,
         frequency: sub.frequency,
@@ -482,7 +483,7 @@ export class SubscriptionService {
       },
     });
 
-    return this.mapSubscriptionToResponse(newSubscription, product);
+    return this.mapSubscriptionToResponse(newSubscription, variant);
   }
 
   private async createFirstOrder(sub: any) {
@@ -492,7 +493,7 @@ export class SubscriptionService {
         subscriptionId: sub.id,
         type: OrderType.SUBSCRIPTION_RENEWAL,
         status: "PAID",
-        total: sub.product.subPrice * sub.quantity,
+        total: sub.variant.subPrice * sub.quantity,
         addressLine1: sub.addressLine1,
         addressLine2: sub.addressLine2,
         city: sub.city,
@@ -500,10 +501,10 @@ export class SubscriptionService {
         postalCode: sub.postalCode,
         items: {
           create: {
-            productId: sub.productId,
+            variantId: sub.variantId,
             qty: sub.quantity,
-            price: sub.product.subPrice,
-            total: sub.product.subPrice * sub.quantity,
+            price: sub.variant.subPrice,
+            total: sub.variant.subPrice * sub.quantity,
           },
         },
       },
@@ -512,11 +513,11 @@ export class SubscriptionService {
 
   async createRenewalOrder(sub: any) {
     // Refresh product price to current price (per §5.2)
-    const product = await this.prisma.product.findUnique({
-      where: { id: sub.productId },
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: sub.variantId },
     });
 
-    if (!product) throw new Error("Product not found for renewal order");
+    if (!variant) throw new Error("Product variant not found for renewal order");
 
     return this.prisma.order.create({
       data: {
@@ -524,7 +525,7 @@ export class SubscriptionService {
         subscriptionId: sub.id,
         type: OrderType.SUBSCRIPTION_RENEWAL,
         status: "PAID",
-        total: product.subPrice * sub.quantity,
+        total: variant.subPrice * sub.quantity,
         addressLine1: sub.addressLine1,
         addressLine2: sub.addressLine2,
         city: sub.city,
@@ -532,23 +533,24 @@ export class SubscriptionService {
         postalCode: sub.postalCode,
         items: {
           create: {
-            productId: sub.productId,
+            variantId: sub.variantId,
             qty: sub.quantity,
-            price: product.subPrice,
-            total: product.subPrice * sub.quantity,
+            price: variant.subPrice,
+            total: variant.subPrice * sub.quantity,
           },
         },
       },
     });
   }
 
-  private async getOrCreateRazorpayPlan(productId: string, amount: number, frequency: SubscriptionFrequency) {
+  private async getOrCreateRazorpayPlan(variantId: string, amount: number, frequency: SubscriptionFrequency) {
     const existingPlan = await this.prisma.subscriptionPlan.findUnique({
       where: {
-        productId_frequency_amount: {
-          productId,
+        variantId_frequency_amount_durationMonths: {
+          variantId,
           frequency: frequency as any,
           amount,
+          durationMonths: 1, // Default duration
         },
       },
     });
@@ -557,8 +559,11 @@ export class SubscriptionService {
       return existingPlan.razorpayPlanId;
     }
 
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
-    const planName = `${product?.name || "Product"} - ${frequency} Subscription`;
+    const variant = await this.prisma.productVariant.findUnique({ 
+      where: { id: variantId },
+      include: { product: true }
+    });
+    const planName = `${variant?.product.name || "Product"} (${variant?.sku}) - ${frequency} Subscription`;
 
     const razorpayPlan = await this.razorpay.plans.create({
       period: frequency === SubscriptionFrequency.MONTHLY ? "monthly" : "weekly",
@@ -567,13 +572,13 @@ export class SubscriptionService {
         name: planName,
         amount: amount,
         currency: "INR",
-        description: `Modern Essentials ${frequency} Subscription for ${product?.name}`,
+        description: `Modern Essentials ${frequency} Subscription for ${variant?.product.name} (${variant?.sku})`,
       },
     });
 
     await this.prisma.subscriptionPlan.create({
       data: {
-        productId,
+        variantId,
         frequency: frequency as any,
         amount,
         razorpayPlanId: razorpayPlan.id,
@@ -612,31 +617,35 @@ export class SubscriptionService {
     }
   }
 
-  private mapSubscriptionToResponse(subscription: any, product: any): SubscriptionResponseDto {
+  private mapSubscriptionToResponse(subscription: any, variant: any): SubscriptionResponseDto {
     return {
       id: subscription.id,
-      productId: subscription.productId,
-      productName: product.name,
+      variantId: subscription.variantId,
+      productName: variant.product.name,
       quantity: subscription.quantity,
       frequency: subscription.frequency,
       status: subscription.status,
       nextBillingAt: subscription.nextBillingAt,
       nextDeliveryAt: subscription.nextDeliveryAt,
-      price: product.subPrice * subscription.quantity,
-      savings: Math.round(((product.price - product.subPrice) / product.price) * 100),
+      price: variant.subPrice * subscription.quantity,
+      savings: Math.round(((variant.price - variant.subPrice) / variant.price) * 100),
       razorpaySubscriptionId: subscription.razorpaySubscriptionId,
       addressLine1: subscription.addressLine1,
       addressLine2: subscription.addressLine2,
       city: subscription.city,
       state: subscription.state,
       postalCode: subscription.postalCode,
-      product: {
-        id: product.id,
-        name: product.name,
-        sku: product.sku,
-        price: product.price,
-        subPrice: product.subPrice,
-        category: product.category,
+      variant: {
+        id: variant.id,
+        sku: variant.sku,
+        price: variant.price,
+        subPrice: variant.subPrice,
+        packSize: variant.packSize,
+        product: {
+          id: variant.product.id,
+          name: variant.product.name,
+          category: variant.product.category,
+        },
       },
     };
   }
@@ -767,16 +776,16 @@ export class SubscriptionService {
   async changeFrequency(subId: string, userId: string, freqDto: ChangeFrequencyDto) {
     const sub = await this.prisma.subscription.findFirst({
       where: { id: subId, userId },
-      include: { product: true },
+      include: { variant: true },
     });
 
     if (!sub) throw new NotFoundException("Subscription not found");
 
     const oldFreq = sub.frequency;
     const newFreq = freqDto.frequency as SubscriptionFrequency;
-    const newAmount = sub.product.subPrice * sub.quantity;
+    const newAmount = sub.variant.subPrice * sub.quantity;
 
-    const newPlanId = await this.getOrCreateRazorpayPlan(sub.productId, newAmount, newFreq);
+    const newPlanId = await this.getOrCreateRazorpayPlan(sub.variantId, newAmount, newFreq);
 
     // Sync with Razorpay
     try {
@@ -807,16 +816,16 @@ export class SubscriptionService {
   async changeQuantity(subId: string, userId: string, qtyDto: ChangeQuantityDto) {
     const sub = await this.prisma.subscription.findFirst({
       where: { id: subId, userId },
-      include: { product: true },
+      include: { variant: true },
     });
 
     if (!sub) throw new NotFoundException("Subscription not found");
 
     const oldQty = sub.quantity;
     const newQty = qtyDto.quantity;
-    const newAmount = sub.product.subPrice * newQty;
+    const newAmount = sub.variant.subPrice * newQty;
 
-    const newPlanId = await this.getOrCreateRazorpayPlan(sub.productId, newAmount, sub.frequency as any);
+    const newPlanId = await this.getOrCreateRazorpayPlan(sub.variantId, newAmount, sub.frequency as any);
 
     // Sync with Razorpay
     try {
@@ -873,22 +882,23 @@ export class SubscriptionService {
   async swapProduct(subId: string, userId: string, swapDto: SwapProductDto) {
     const sub = await this.prisma.subscription.findFirst({
       where: { id: subId, userId },
-      include: { product: true },
+      include: { variant: { include: { product: true } } },
     });
 
     if (!sub) throw new NotFoundException("Subscription not found");
 
-    const newProduct = await this.prisma.product.findUnique({
-      where: { id: swapDto.newProductId },
+    const newVariant = await this.prisma.productVariant.findUnique({
+      where: { id: swapDto.newVariantId },
+      include: { product: true },
     });
 
-    if (!newProduct) throw new NotFoundException("New product not found");
+    if (!newVariant) throw new NotFoundException("New product variant not found");
 
-    const oldProductId = sub.productId;
-    const newProductId = swapDto.newProductId;
-    const newAmount = newProduct.subPrice! * sub.quantity;
+    const oldVariantId = sub.variantId;
+    const newVariantId = swapDto.newVariantId;
+    const newAmount = newVariant.subPrice * sub.quantity;
 
-    const newPlanId = await this.getOrCreateRazorpayPlan(newProductId, newAmount, sub.frequency as any);
+    const newPlanId = await this.getOrCreateRazorpayPlan(newVariantId, newAmount, sub.frequency as any);
 
     // Sync with Razorpay
     try {
@@ -896,7 +906,7 @@ export class SubscriptionService {
         await this.razorpay.subscriptions.update(sub.razorpaySubscriptionId, {
           plan_id: newPlanId,
         });
-        this.logger.log(`Updated Razorpay subscription ${sub.razorpaySubscriptionId} with new plan ${newPlanId} (Product Swapped to: ${newProduct.sku})`);
+        this.logger.log(`Updated Razorpay subscription ${sub.razorpaySubscriptionId} with new plan ${newPlanId} (Variant Swapped to: ${newVariant.sku})`);
       }
     } catch (e: any) {
       this.logger.error(`Failed to swap product in Razorpay: ${e.message}`);
@@ -905,10 +915,10 @@ export class SubscriptionService {
 
     await this.prisma.subscription.update({
       where: { id: subId },
-      data: { productId: newProductId },
+      data: { variantId: newVariantId },
     });
 
-    await this.logChange(subId, "SWAP_PRODUCT", oldProductId, newProductId, userId);
+    await this.logChange(subId, "SWAP_PRODUCT", oldVariantId, newVariantId, userId);
 
     return this.getSubscriptionById(userId, subId);
   }
@@ -948,7 +958,7 @@ export class SubscriptionService {
     const [items, total] = await Promise.all([
       this.prisma.subscription.findMany({
         where,
-        include: { product: true, user: true },
+        include: { variant: { include: { product: true } }, user: true },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: "desc" },
@@ -958,7 +968,7 @@ export class SubscriptionService {
 
     return {
       items: items.map((sub) => ({
-        ...this.mapSubscriptionToResponse(sub, sub.product),
+        ...this.mapSubscriptionToResponse(sub, sub.variant),
         user: {
           id: sub.user.id,
           phone: sub.user.phone,
@@ -1027,7 +1037,7 @@ export class SubscriptionService {
 
     return this.prisma.subscription.findUnique({
       where: { id: subId },
-      include: { product: true },
+      include: { variant: { include: { product: true } } },
     });
   }
 

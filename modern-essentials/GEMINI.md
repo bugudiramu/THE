@@ -1,27 +1,33 @@
 # GEMINI.md - Modern Essentials Project Context
 
 ## Project Overview
-**Modern Essentials** is a subscription-first D2C fresh essentials brand (starting with eggs, expanding to dairy) built with a focus on radical transparency and honest marketing. The project is organized as a **Turborepo monorepo** using **PNPM** for package management.
+**Modern Essentials** is a subscription-first D2C fresh essentials brand built with a focus on radical transparency and honest marketing. The project is a **Turborepo monorepo** using **PNPM**.
 
 ### Tech Stack
-- **Frontend (Storefront/Admin):** Next.js 14, Tailwind CSS, shadcn/ui, Clerk (Auth)
-- **Backend (API):** NestJS, Prisma (ORM), BullMQ (Scheduling), PostgreSQL, Redis
-- **Infrastructure:** Turborepo, PNPM, Docker (local dev), AWS S3 (storage), Sanity.io (CMS)
+- **Frontend:** Next.js 14, Tailwind CSS, shadcn/ui, Clerk (Auth)
+- **Backend:** NestJS, Prisma (ORM), BullMQ (Scheduling), PostgreSQL, Redis
+- **Infrastructure:** Turborepo, PNPM, Docker, AWS S3, Sanity.io (CMS)
 
-## Directory Structure
-- `apps/web`: Customer-facing storefront (Next.js)
-- `apps/admin`: Internal operations dashboard (Next.js)
-- `apps/api`: Main backend service (NestJS)
-- `packages/db`: Shared Prisma schema and generated client
-- `packages/types`: Shared TypeScript interfaces and types
-- `packages/utils`: Shared utility functions
-- `packages/email`: React-based email templates
+## Directory Structure & Local Context
+Each major directory contains its own `GEMINI.md` with localized context.
 
-## Key Business Logic
-- **Subscription-First:** The primary purchase mode is recurring subscriptions.
-- **FEFO Inventory:** "First Expired, First Out" logic is mandatory for perishables.
-- **Radical Transparency:** Cost breakdowns and batch traceability are core features.
-- **Idempotent Webhooks:** All incoming webhooks (Razorpay, etc.) are logged and processed exactly once.
+- `apps/web`: [Web Storefront](./apps/web/GEMINI.md) - Customer-facing Next.js app.
+- `apps/admin`: [Admin Dashboard](./apps/admin/GEMINI.md) - Internal operations and fulfillment.
+- `apps/api`: [API Service](./apps/api/GEMINI.md) - Central NestJS backend.
+- `packages/db`: [Database Layer](./packages/db/GEMINI.md) - Prisma schema and client.
+- `packages/types`: [Shared Types](./packages/types/GEMINI.md) - Common TypeScript definitions.
+- `packages/utils`: [Shared Utilities](./packages/utils/GEMINI.md) - Helper functions.
+- `packages/email`: [Transactional Emails](./packages/email/GEMINI.md) - React-based templates.
+- `packages/ui`: [Shared UI](./packages/ui/GEMINI.md) - Design system components.
+- `packages/config`: [Shared Config](./packages/config/GEMINI.md) - Linter, TS, and Tailwind configs.
+
+## Key Business Logic (The Core Mandates)
+- **Subscription-First:** Primary purchase mode is recurring subscriptions.
+- **FEFO Law:** "First Expired, First Out" logic is mandatory for perishables.
+- **Radical Transparency:** Cost breakdowns and batch traceability are core.
+- **Idempotency:** All webhooks (Razorpay, etc.) MUST be processed exactly once via the `webhook_events` log.
+- **Immutable Ledger:** User rewards/balances are updated ONLY via appending to `ledger_entries`.
+- **State Machine:** Subscription status transitions happen ONLY in `SubscriptionService`.
 
 ## Development Workflow
 
@@ -29,27 +35,22 @@
 - `pnpm dev`: Starts all applications in parallel.
 - `pnpm build`: Builds all applications and packages.
 - `pnpm test`: Runs the test suite across the monorepo.
-- `pnpm lint`: Lints the codebase using ESLint.
-- `pnpm db:migrate`: Applies Prisma migrations to the database.
-- `pnpm db:generate`: Generates the Prisma client (run this after schema changes).
-- `pnpm db:studio`: Opens Prisma Studio for manual data inspection.
+- `pnpm db:migrate`: Applies Prisma migrations.
+- `pnpm db:generate`: Generates the Prisma client.
 
 ### Conventions
-- **Database Changes:** Always modify `packages/db/schema.prisma` and run `pnpm db:migrate`.
-- **API Documentation:** The NestJS API provides Swagger documentation at `/api/docs`.
-- **Shared Types:** Add cross-service types to `packages/types/src/index.ts`.
-- **Environment Variables:** All environment variables must exist in `.env.example` with a description comment.
-- **Git:** Conventional Commits are enforced via husky and commitlint.
-- **TypeScript:** Strict mode everywhere. No `any`. No type assertions without comment.
-- **NestJS:** Every module gets: `module.ts`, `controller.ts`, `service.ts`, `dto.ts`. No `console.log` in committed code (use NestJS Logger).
-- **Prisma & FEFO:** Every Prisma query that picks inventory MUST `ORDER BY expires_at ASC` (FEFO law).
-- **Webhooks:** Every Razorpay webhook handler MUST check `webhook_events` table for idempotency first.
-- **Ledger:** Rewards balance is NEVER updated directly. Append to `ledger_entries` only.
-- **State Machines:** Subscription status transitions happen ONLY in the subscription service, never in controllers.
-- **Package Manager:** Use `pnpm` ONLY.
+- **TypeScript:** Strict mode everywhere. No `any`.
+- **Git:** Conventional Commits are enforced.
+- **NestJS:** module/controller/service/dto pattern for every module.
+- **Prisma:** Always `ORDER BY expires_at ASC` when picking inventory.
+
+## Recent Architectural Changes
+- **Product Variants:** Transitioned from simple products to a Variant-based model.
+- **Dunning Workflow:** Automated retry logic for failed subscription payments.
+- **Inventory Reconciliation:** System for syncing physical vs system stock levels.
+- **Partner Links:** Integration for Quick Commerce links (Zepto, Blinkit).
 
 ## Documentation & References
-- `modern_essentials_blueprint_v2.md`: Detailed company vision, technical roadmap, and module map.
-- `CLERK_SETUP_INSTRUCTIONS.md`: Setup guide for authentication.
-- `ISSUES_SUMMARY.md`: Current known issues and technical debt.
-- `TESTING_CHECKLIST.md`: Pre-deployment testing procedures.
+- `modern_essentials_blueprint_v2.md`: Detailed vision and roadmap.
+- `ISSUES_SUMMARY.md`: Current known issues and debt.
+- `TESTING_CHECKLIST.md`: Pre-deployment procedures.

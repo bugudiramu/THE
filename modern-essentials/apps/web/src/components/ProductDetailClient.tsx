@@ -8,10 +8,11 @@ import {
   Text, 
   AspectRatio, 
   Card, 
-  Separator 
+  Separator,
+  cn
 } from "@modern-essentials/ui";
-import { Leaf, Minus, Plus, Check } from "lucide-react";
-import { useState } from "react";
+import { Leaf, Minus, Plus, Check, ExternalLink } from "lucide-react";
+import { useState, useMemo } from "react";
 import SubscriptionToggle from "./SubscriptionToggle";
 import Image from "next/image";
 
@@ -20,14 +21,20 @@ interface ProductDetailClientProps {
 }
 
 export function ProductDetailClient({ product }: ProductDetailClientProps) {
+  const [selectedVariantId, setSelectedVariantId] = useState(product.variants?.[0]?.id);
   const [isSubscription, setIsSubscription] = useState(true);
   const [frequency, setFrequency] = useState("WEEKLY");
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
 
+  const selectedVariant = useMemo(() => 
+    product.variants?.find((v: any) => v.id === selectedVariantId) || product.variants?.[0],
+  [product.variants, selectedVariantId]);
+
   const handleAddToCart = async () => {
     try {
-      await addItem(product, quantity, isSubscription, frequency);
+      if (!selectedVariant) return;
+      await addItem(selectedVariant, quantity, isSubscription, frequency, product);
     } catch (err) {
       console.error("Failed to add to cart", err);
     }
@@ -36,6 +43,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const handleSubscriptionChange = (
     subscribe: boolean,
     newFrequency: string,
+    _durationMonths: number
   ) => {
     setIsSubscription(subscribe);
     if (newFrequency) setFrequency(newFrequency);
@@ -64,6 +72,31 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             <Text variant="muted">No Image Available</Text>
           </AspectRatio>
         )}
+
+        {/* Quick Commerce Links */}
+        {product.partnerLinks && product.partnerLinks.length > 0 && (
+          <Card className="p-6 rounded-2xl bg-surface-container-low border-none shadow-sm">
+            <Text variant="xs" className="text-primary/40 font-black uppercase tracking-widest mb-4">
+              Also Available On
+            </Text>
+            <div className="grid grid-cols-2 gap-3">
+              {product.partnerLinks.map((link: any) => (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 rounded-xl bg-surface hover:bg-white transition-all border border-primary/5 group"
+                >
+                  <Text variant="xs" className="font-bold text-primary capitalize">
+                    {link.partner.toLowerCase()}
+                  </Text>
+                  <ExternalLink className="w-3 h-3 text-primary/20 group-hover:text-secondary transition-colors" />
+                </a>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Product Info & Action Area - 7 cols */}
@@ -84,6 +117,29 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           </Text>
         </div>
 
+        {/* Pack Size Selector */}
+        <div className="space-y-3">
+          <Text variant="xs" className="text-primary/40 font-black uppercase tracking-widest">
+            Select Pack Size
+          </Text>
+          <div className="flex flex-wrap gap-3">
+            {product.variants?.map((variant: any) => (
+              <button
+                key={variant.id}
+                onClick={() => setSelectedVariantId(variant.id)}
+                className={cn(
+                  "px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border-2",
+                  selectedVariantId === variant.id
+                    ? "border-secondary bg-surface shadow-md text-primary"
+                    : "border-primary/5 bg-surface/30 text-primary/40 hover:bg-surface/50"
+                )}
+              >
+                {variant.packSize} Eggs
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Pricing / Plan Selection */}
         <Card className="bg-surface-container-low border-none rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-primary/5">
           <div className="mb-4">
@@ -93,8 +149,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           </div>
 
           <SubscriptionToggle
-            price={product.price}
-            subPrice={product.subPrice}
+            price={selectedVariant?.price || 0}
+            subPrice={selectedVariant?.subPrice}
             onSubscriptionChange={handleSubscriptionChange}
           />
 

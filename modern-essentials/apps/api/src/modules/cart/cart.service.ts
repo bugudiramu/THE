@@ -26,11 +26,15 @@ export class CartService {
       include: {
         items: {
           include: {
-            product: {
+            variant: {
               include: {
-                images: {
-                  orderBy: { sortOrder: "asc" },
-                  take: 1,
+                product: {
+                  include: {
+                    images: {
+                      orderBy: { sortOrder: "asc" },
+                      take: 1,
+                    },
+                  },
                 },
               },
             },
@@ -45,11 +49,15 @@ export class CartService {
         include: {
           items: {
             include: {
-              product: {
+              variant: {
                 include: {
-                  images: {
-                    orderBy: { sortOrder: "asc" },
-                    take: 1,
+                  product: {
+                    include: {
+                      images: {
+                        orderBy: { sortOrder: "asc" },
+                        take: 1,
+                      },
+                    },
                   },
                 },
               },
@@ -79,7 +87,7 @@ export class CartService {
       userId: cart.userId,
       createdAt: cart.createdAt,
       updatedAt: cart.updatedAt,
-      items: cart.items.map(this.mapCartItemToResponse),
+      items: cart.items.map((item: any) => this.mapCartItemToResponse(item)),
       totalItems,
       totalAmount,
     };
@@ -89,23 +97,23 @@ export class CartService {
     userId: string,
     addToCartDto: AddToCartDto,
   ): Promise<CartResponseDto> {
-    // Verify product exists and is active
-    const product = await this.prisma.product.findUnique({
-      where: { id: addToCartDto.productId },
+    // Verify variant exists and is active
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: addToCartDto.variantId },
     });
 
-    if (!product || !product.isActive) {
-      throw new NotFoundException("Product not found or not available");
+    if (!variant || !variant.isActive) {
+      throw new NotFoundException("Product variant not found or not available");
     }
 
     const cart = await this.getOrCreateCart(userId);
 
-    // Check if item already exists in cart (now matching on productId AND isSubscription)
+    // Check if item already exists in cart
     const existingItem = await this.prisma.cartItem.findUnique({
       where: {
-        cartId_productId_isSubscription: {
+        cartId_variantId_isSubscription: {
           cartId: cart.id,
-          productId: addToCartDto.productId,
+          variantId: addToCartDto.variantId,
           isSubscription: addToCartDto.isSubscription || false,
         },
       },
@@ -125,9 +133,9 @@ export class CartService {
       await this.prisma.cartItem.create({
         data: {
           cartId: cart.id,
-          productId: addToCartDto.productId,
+          variantId: addToCartDto.variantId,
           quantity: addToCartDto.quantity,
-          priceSnapshot: product.price, // Store current price
+          priceSnapshot: addToCartDto.isSubscription ? variant.subPrice : variant.price, // Store current price
           isSubscription: addToCartDto.isSubscription || false,
           frequency: addToCartDto.frequency as any,
         },
@@ -206,22 +214,27 @@ export class CartService {
   private mapCartItemToResponse(item: any): CartItemResponseDto {
     return {
       id: item.id,
-      productId: item.productId,
+      variantId: item.variantId,
       quantity: item.quantity,
       priceSnapshot: item.priceSnapshot,
       isSubscription: item.isSubscription,
       frequency: item.frequency,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
-      product: {
-        id: item.product.id,
-        name: item.product.name,
-        sku: item.product.sku,
-        price: item.product.price,
-        images: item.product.images.map((img: any) => ({
-          url: img.url,
-          alt: img.alt,
-        })),
+      variant: {
+        id: item.variant.id,
+        sku: item.variant.sku,
+        price: item.variant.price,
+        subPrice: item.variant.subPrice,
+        packSize: item.variant.packSize,
+        product: {
+          id: item.variant.product.id,
+          name: item.variant.product.name,
+          images: item.variant.product.images.map((img: any) => ({
+            url: img.url,
+            alt: img.alt,
+          })),
+        },
       },
     };
   }

@@ -21,7 +21,7 @@ export type OrderType = z.infer<typeof OrderTypeSchema>;
 export const OrderItemSchema = z.object({
   id: z.string(),
   orderId: z.string(),
-  productId: z.string(),
+  variantId: z.string(),
   qty: z.number().int(),
   price: z.number().int(),
   total: z.number().int(),
@@ -47,7 +47,7 @@ export type Order = z.infer<typeof OrderSchema>;
 
 // DTOs
 export const CreateOrderItemSchema = z.object({
-  productId: z.string(),
+  variantId: z.string(),
   qty: z.number().int().min(1),
 });
 
@@ -70,8 +70,8 @@ export interface OrderStatusCount {
 
 export interface PickListItem {
   orderId: string;
-  productId: string;
-  productSku: string;
+  variantId: string;
+  variantSku: string;
   productName: string;
   qtyNeeded: number;
   batchId: string;

@@ -2,7 +2,7 @@ import { IsString, IsInt, IsEnum, IsOptional, IsPositive } from 'class-validator
 
 export class CreateSubscriptionDto {
   @IsString()
-  productId!: string;
+  variantId!: string;
 
   @IsInt()
   @IsPositive()
@@ -46,7 +46,7 @@ export class UpdateSubscriptionDto {
 
 export class SubscriptionResponseDto {
   id!: string;
-  productId!: string;
+  variantId!: string;
   productName!: string;
   quantity!: number;
   frequency!: string;
@@ -62,13 +62,17 @@ export class SubscriptionResponseDto {
   city?: string;
   state?: string;
   postalCode?: string;
-  product!: {
+  variant!: {
     id: string;
-    name: string;
     sku: string;
     price: number;
-    subPrice?: number;
-    category: string;
+    subPrice: number;
+    packSize: number;
+    product: {
+      id: string;
+      name: string;
+      category: string;
+    };
   };
 }
 
@@ -127,7 +131,7 @@ export class ChangeAddressDto {
 
 export class SwapProductDto {
   @IsString()
-  newProductId!: string;
+  newVariantId!: string;
 }
 
 export class CancelSubscriptionDto {

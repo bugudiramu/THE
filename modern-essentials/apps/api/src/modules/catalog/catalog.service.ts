@@ -23,19 +23,24 @@ export class CatalogService {
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    this.logger.log(`Creating product: ${createProductDto.sku}`);
+    this.logger.log(`Creating product: ${createProductDto.name}`);
 
     try {
       const product = await this.prisma.product.create({
         data: {
-          sku: createProductDto.sku,
           name: createProductDto.name,
           category: createProductDto.category,
-          price: createProductDto.price,
-          subPrice: createProductDto.subPrice,
           description: createProductDto.description,
           seoTitle: createProductDto.seoTitle,
           seoDesc: createProductDto.seoDesc,
+          variants: {
+            create: {
+              sku: createProductDto.sku,
+              price: createProductDto.price,
+              subPrice: createProductDto.subPrice,
+              packSize: 6, // Default pack size
+            },
+          },
           images: createProductDto.images
             ? {
                 create: createProductDto.images.map((img) => ({
@@ -50,6 +55,7 @@ export class CatalogService {
           images: {
             orderBy: { sortOrder: "asc" },
           },
+          variants: true,
         },
       });
 
@@ -84,15 +90,22 @@ export class CatalogService {
 
     if (category) where.category = category;
     if (isActive !== undefined) where.isActive = isActive;
+    
     if (minPrice !== undefined || maxPrice !== undefined) {
-      where.price = {};
-      if (minPrice !== undefined) where.price.gte = minPrice;
-      if (maxPrice !== undefined) where.price.lte = maxPrice;
+      where.variants = {
+        some: {
+          price: {
+            gte: minPrice,
+            lte: maxPrice,
+          },
+        },
+      };
     }
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
-        { sku: { contains: search, mode: "insensitive" } },
+        { variants: { some: { sku: { contains: search, mode: "insensitive" } } } },
         { description: { contains: search, mode: "insensitive" } },
       ];
     }
@@ -104,8 +117,12 @@ export class CatalogService {
           images: {
             orderBy: { sortOrder: "asc" },
           },
+          variants: true,
+          partnerLinks: true,
         },
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: sortBy === 'price' 
+          ? { variants: { _count: 'desc' } } // Simplified for now as price is in variants
+          : { [sortBy]: sortOrder },
         skip,
         take: limit,
       }),
@@ -122,6 +139,8 @@ export class CatalogService {
         images: {
           orderBy: { sortOrder: "asc" },
         },
+        variants: true,
+        partnerLinks: true,
       },
     });
 
@@ -139,13 +158,28 @@ export class CatalogService {
     this.logger.log(`Updating product: ${id}`);
 
     try {
+      const { price, subPrice, ...productData } = updateProductDto;
+      
       const product = await this.prisma.product.update({
         where: { id },
-        data: updateProductDto,
+        data: {
+          ...productData,
+          // Update the first variant if price is provided
+          variants: price || subPrice ? {
+            updateMany: {
+              where: {}, // Update all variants of this product? Or just first one?
+              data: {
+                ...(price ? { price } : {}),
+                ...(subPrice ? { subPrice } : {}),
+              }
+            }
+          } : undefined
+        },
         include: {
           images: {
             orderBy: { sortOrder: "asc" },
           },
+          variants: true,
         },
       });
 

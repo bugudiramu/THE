@@ -36,7 +36,7 @@ export class CheckoutService {
       const frequency = (subItems[0].frequency?.toLowerCase() || "weekly") as "weekly" | "monthly";
       const planName = `Modern Essentials ${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Subscription - ₹${recurringAmount / 100}`;
 
-      const razorpayPlan = await this.getOrCreateRazorpayPlan(subItems[0].productId, planName, recurringAmount, frequency);
+      const razorpayPlan = await this.getOrCreateRazorpayPlan(subItems[0].variantId, planName, recurringAmount, frequency);
       // 2. Initiate the Razorpay Subscription
       const subscriptionOptions: any = {
         plan_id: razorpayPlan.id,
@@ -69,7 +69,7 @@ export class CheckoutService {
       await this.prisma.subscription.create({
         data: {
           userId,
-          productId: primarySub.productId,
+          variantId: primarySub.variantId,
           quantity: primarySub.quantity,
           frequency: (primarySub.frequency || 'WEEKLY') as any,
           status: 'PENDING',
@@ -96,12 +96,12 @@ export class CheckoutService {
     }
   }
 
-  private async getOrCreateRazorpayPlan(productId: string, name: string, amount: number, interval: "weekly" | "monthly") {
+  private async getOrCreateRazorpayPlan(variantId: string, name: string, amount: number, interval: "weekly" | "monthly") {
     // Actually, I can search for a plan by name and amount in the DB
     const frequency = interval === "weekly" ? "WEEKLY" : "MONTHLY";
     const existingPlan = await this.prisma.subscriptionPlan.findFirst({
       where: {
-        productId,
+        variantId,
         amount,
         frequency: frequency as any,
       }
@@ -125,7 +125,7 @@ export class CheckoutService {
     // Save to cache
     await this.prisma.subscriptionPlan.create({
       data: {
-        productId,
+        variantId,
         amount,
         frequency: frequency as any,
         razorpayPlanId: razorpayPlan.id,
@@ -261,7 +261,7 @@ export class CheckoutService {
             const subscription = await tx.subscription.create({
               data: {
                 userId: dbUser.id,
-                productId: primarySub.productId,
+                variantId: primarySub.variantId,
                 quantity: primarySub.quantity,
                 frequency,
                 status: 'PENDING',
@@ -314,7 +314,7 @@ export class CheckoutService {
             await tx.orderItem.create({
               data: {
                 orderId: order.id,
-                productId: item.productId,
+                variantId: item.variantId,
                 qty: item.quantity,
                 price: item.price,
                 total: item.price * item.quantity,

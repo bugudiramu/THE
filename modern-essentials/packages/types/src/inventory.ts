@@ -29,7 +29,7 @@ export type WastageReason = z.infer<typeof WastageReasonSchema>;
 
 // Interfaces
 export interface IInventorySummary {
-  productId: string;
+  variantId: string;
   sku: string;
   name: string;
   totalQty: number;
@@ -49,7 +49,7 @@ export interface IFarm {
 
 export interface IBatch {
   id: string;
-  productId: string;
+  variantId: string;
   sku: string;
   productName: string;
   qty: number;
@@ -64,7 +64,7 @@ export interface IBatch {
 
 export interface IWastageLog {
   id: string;
-  productId: string;
+  variantId: string;
   productName: string;
   sku: string;
   inventoryBatchId?: string | null;
@@ -77,7 +77,7 @@ export interface IWastageLog {
 
 // Payload DTOs
 export const CreateGrnPayloadSchema = z.object({
-  productId: z.string(),
+  variantId: z.string(),
   qty: z.number().int().min(1),
   farmId: z.string(),
   collectedAt: z.string(), // ISO date

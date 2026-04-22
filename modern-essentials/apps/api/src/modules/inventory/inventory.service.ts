@@ -22,9 +22,10 @@ export class InventoryService {
    * SKU-wise stock summary with expiry alerts.
    */
   async getSummary(): Promise<IInventorySummary[]> {
-    const products = await this.prisma.product.findMany({
+    const variants = await this.prisma.productVariant.findMany({
       where: { isActive: true },
       include: {
+        product: true,
         inventoryBatches: {
           where: {
             status: "AVAILABLE",
@@ -36,8 +37,8 @@ export class InventoryService {
     const threeDaysFromNow = new Date();
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
-    return products.map((product) => {
-      const batches = product.inventoryBatches;
+    return variants.map((variant) => {
+      const batches = variant.inventoryBatches;
       const totalQty = batches.reduce((sum, b) => sum + b.qty, 0);
       const availableQty = batches
         .filter((b) => b.qcStatus === "PASSED")
@@ -50,9 +51,9 @@ export class InventoryService {
       ).length;
 
       return {
-        productId: product.id,
-        sku: product.sku,
-        name: product.name,
+        variantId: variant.id,
+        sku: variant.sku,
+        name: variant.product.name,
         totalQty,
         availableQty,
         qcPendingQty,
@@ -65,19 +66,23 @@ export class InventoryService {
    * List all batches with filters and FEFO sorting.
    */
   async getBatches(filters: {
-    productId?: string;
+    variantId?: string;
     status?: string;
     qcStatus?: string;
   }): Promise<IBatch[]> {
     const where: any = {};
-    if (filters.productId) where.productId = filters.productId;
+    if (filters.variantId) where.variantId = filters.variantId;
     if (filters.status) where.status = filters.status;
     if (filters.qcStatus) where.qcStatus = filters.qcStatus;
 
     const batches = await this.prisma.inventoryBatch.findMany({
       where,
       include: {
-        product: true,
+        variant: {
+          include: {
+            product: true,
+          },
+        },
         farmBatch: {
           include: {
             farm: true,
@@ -91,9 +96,9 @@ export class InventoryService {
 
     return batches.map((b) => ({
       id: b.id,
-      productId: b.productId,
-      sku: b.product.sku,
-      productName: b.product.name,
+      variantId: b.variantId,
+      sku: b.variant.sku,
+      productName: b.variant.product.name,
       qty: b.qty,
       receivedAt: b.receivedAt.toISOString(),
       expiresAt: b.expiresAt.toISOString(),
@@ -109,10 +114,11 @@ export class InventoryService {
    * Record new farm arrival (GRN).
    */
   async createGrn(dto: CreateGrnDto) {
-    const product = await this.prisma.product.findUnique({
-      where: { id: dto.productId },
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: dto.variantId },
+      include: { product: true },
     });
-    if (!product) throw new NotFoundException("Product not found");
+    if (!variant) throw new NotFoundException("Product variant not found");
 
     const farm = await this.prisma.farm.findUnique({
       where: { id: dto.farmId },
@@ -127,7 +133,7 @@ export class InventoryService {
     return this.prisma.$transaction(async (tx) => {
       const batch = await tx.inventoryBatch.create({
         data: {
-          productId: dto.productId,
+          variantId: dto.variantId,
           qty: dto.qty,
           receivedAt: new Date(),
           expiresAt,
@@ -137,12 +143,12 @@ export class InventoryService {
         },
       });
 
-      this.logger.log(`Created GRN: Batch ${batch.id} for Product ${product.sku} (${dto.qty} units)`);
+      this.logger.log(`Created GRN: Batch ${batch.id} for Product ${variant.sku} (${dto.qty} units)`);
 
       await tx.farmBatch.create({
         data: {
           farmId: dto.farmId,
-          productId: dto.productId,
+          variantId: dto.variantId,
           inventoryBatchId: batch.id,
           qtyCollected: dto.qtyCollected || dto.qty,
           collectedAt,
@@ -177,7 +183,7 @@ export class InventoryService {
       if (dto.qcStatus === "REJECTED") {
         await tx.wastageLog.create({
           data: {
-            productId: batch.productId,
+            variantId: batch.variantId,
             inventoryBatchId: batch.id,
             qty: batch.qty,
             reason: "QC_REJECTED",
@@ -214,7 +220,7 @@ export class InventoryService {
       if (diff > 0) {
         await tx.wastageLog.create({
           data: {
-            productId: batch.productId,
+            variantId: batch.variantId,
             inventoryBatchId: batch.id,
             qty: diff,
             reason: dto.reason,
@@ -242,7 +248,11 @@ export class InventoryService {
       include: {
         inventoryBatch: {
           include: {
-            product: true,
+            variant: {
+              include: {
+                product: true,
+              },
+            },
           },
         },
       },
@@ -253,18 +263,20 @@ export class InventoryService {
 
     // We need to handle logs that might not have a batch (though they should)
     // and logs for products that might have been deleted (though they shouldn't)
-    // Let's get all products to map correctly if needed
-    const products = await this.prisma.product.findMany();
-    const productMap = new Map(products.map((p) => [p.id, p]));
+    // Let's get all variants to map correctly if needed
+    const variants = await this.prisma.productVariant.findMany({
+      include: { product: true },
+    });
+    const variantMap = new Map(variants.map((v) => [v.id, v]));
 
     return logs.map((log) => {
-      const product =
-        log.inventoryBatch?.product || productMap.get(log.productId);
+      const variant =
+        log.inventoryBatch?.variant || variantMap.get(log.variantId);
       return {
         id: log.id,
-        productId: log.productId,
-        productName: product?.name || "Unknown Product",
-        sku: product?.sku || "N/A",
+        variantId: log.variantId,
+        productName: variant?.product.name || "Unknown Product",
+        sku: variant?.sku || "N/A",
         inventoryBatchId: log.inventoryBatchId,
         qty: log.qty,
         reason: log.reason as any,

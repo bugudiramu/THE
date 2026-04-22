@@ -3,7 +3,7 @@ import { SubscriptionFrequency } from "@modern-essentials/db";
 
 export class AddToCartDto {
   @IsString()
-  productId!: string;
+  variantId!: string;
 
   @IsInt()
   @IsPositive()
@@ -26,19 +26,24 @@ export class UpdateCartItemDto {
 
 export class CartItemResponseDto {
   id!: string;
-  productId!: string;
+  variantId!: string;
   quantity!: number;
   priceSnapshot!: number; // in paise
   isSubscription!: boolean;
   frequency?: SubscriptionFrequency;
   createdAt!: Date;
   updatedAt!: Date;
-  product!: {
+  variant!: {
     id: string;
-    name: string;
     sku: string;
-    price: number; // current price
-    images: { url: string; alt?: string }[];
+    price: number;
+    subPrice: number;
+    packSize: number;
+    product: {
+      id: string;
+      name: string;
+      images: { url: string; alt?: string | null }[];
+    };
   };
 }
 

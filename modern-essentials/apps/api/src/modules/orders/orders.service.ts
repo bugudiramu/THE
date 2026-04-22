@@ -60,11 +60,14 @@ export class OrdersService {
         },
         items: {
           include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                sku: true,
+            variant: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -87,12 +90,15 @@ export class OrdersService {
       include: {
         items: {
           include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                sku: true,
-                category: true,
+            variant: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    category: true,
+                  },
+                },
               },
             },
           },
@@ -165,12 +171,15 @@ export class OrdersService {
         },
         items: {
           include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                sku: true,
-                category: true,
+            variant: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    category: true,
+                  },
+                },
               },
             },
           },
@@ -234,8 +243,12 @@ export class OrdersService {
         },
         items: {
           include: {
-            product: {
-              select: { id: true, name: true, sku: true },
+            variant: {
+              include: {
+                product: {
+                  select: { id: true, name: true },
+                },
+              },
             },
           },
         },
@@ -301,11 +314,14 @@ export class OrdersService {
       include: {
         items: {
           include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                sku: true,
+            variant: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -338,10 +354,10 @@ export class OrdersService {
     }> = [];
 
     for (const order of orders) {
-      for (const item of order.items) {
-        // Find matching batches for this product (already FEFO sorted)
+      for (const item of (order as any).items) {
+        // Find matching batches for this variant (already FEFO sorted)
         const matchingBatches = batches.filter(
-          (b) => b.productId === item.productId,
+          (b) => b.variantId === item.variantId,
         );
 
         if (matchingBatches.length > 0) {
@@ -350,8 +366,8 @@ export class OrdersService {
           pickListItems.push({
             orderId: order.id,
             orderType: order.type,
-            sku: item.product.sku,
-            productName: item.product.name,
+            sku: item.variant.sku,
+            productName: item.variant.product.name,
             qty: item.qty,
             inventoryBatchId: batch.id,
             binLocation: batch.locationId || "UNASSIGNED",
@@ -362,8 +378,8 @@ export class OrdersService {
           pickListItems.push({
             orderId: order.id,
             orderType: order.type,
-            sku: item.product.sku,
-            productName: item.product.name,
+            sku: item.variant.sku,
+            productName: item.variant.product.name,
             qty: item.qty,
             inventoryBatchId: "NO_STOCK",
             binLocation: "N/A",
@@ -412,11 +428,14 @@ export class OrdersService {
         },
         items: {
           include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                sku: true,
+            variant: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -446,9 +465,9 @@ export class OrdersService {
           state: order.state,
           postalCode: order.postalCode,
         },
-        items: order.items.map((item) => ({
-          productName: item.product.name,
-          sku: item.product.sku,
+        items: (order as any).items.map((item: any) => ({
+          productName: item.variant.product.name,
+          sku: item.variant.sku,
           qty: item.qty,
         })),
         total: order.total,

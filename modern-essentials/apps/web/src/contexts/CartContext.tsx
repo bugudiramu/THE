@@ -12,20 +12,24 @@ import {
 
 interface CartItem {
   id: string;
-  productId: string;
+  variantId: string;
   quantity: number;
   priceSnapshot: number;
   isSubscription: boolean;
   frequency?: string;
   createdAt: string;
   updatedAt: string;
-  product: {
+  variant: {
     id: string;
-    name: string;
     sku: string;
+    packSize: number;
     price: number;
-    subPrice?: number;
-    images: { url: string; alt?: string }[];
+    subPrice: number;
+    product: {
+      id: string;
+      name: string;
+      images: { url: string; alt?: string }[];
+    };
   };
 }
 
@@ -38,7 +42,7 @@ interface CartState {
 }
 
 interface CartContextType extends CartState {
-  addItem: (product: any, quantity: number, isSubscription?: boolean, frequency?: string) => Promise<void>;
+  addItem: (variant: any, quantity: number, isSubscription?: boolean, frequency?: string, product?: any) => Promise<void>;
   updateItem: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -152,7 +156,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addItem = async (product: any, quantity: number, isSubscription = false, frequency = "WEEKLY") => {
+  const addItem = async (variant: any, quantity: number, isSubscription = false, frequency = "WEEKLY", product?: any) => {
     dispatch({ type: "SET_LOADING", payload: true });
     
     if (isSignedIn && user) {
@@ -165,7 +169,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            productId: product.id,
+            variantId: variant.id,
             quantity,
             isSubscription,
             frequency,
@@ -187,28 +191,51 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // Guest mode or API failure
     const currentItems = [...state.items];
     const existingIndex = currentItems.findIndex(
-      i => i.productId === product.id && i.isSubscription === isSubscription
+      i => i.variantId === variant.id && i.isSubscription === isSubscription
     );
+
+    // Get product info from passed product or variant.product
+    const productInfo = product || variant.product;
 
     if (existingIndex >= 0) {
       currentItems[existingIndex].quantity += quantity;
+      
+      // Also ensure variant/product info is present if it was previously missing
+      if (!currentItems[existingIndex].variant || !currentItems[existingIndex].variant.product) {
+        currentItems[existingIndex].variant = {
+          id: variant.id,
+          sku: variant.sku,
+          packSize: variant.packSize,
+          price: variant.price,
+          subPrice: variant.subPrice,
+          product: {
+            id: productInfo?.id || variant.productId,
+            name: productInfo?.name || "Product",
+            images: productInfo?.images || []
+          }
+        };
+      }
     } else {
       currentItems.push({
         id: Math.random().toString(36).substring(7),
-        productId: product.id,
+        variantId: variant.id,
         quantity,
-        priceSnapshot: isSubscription ? (product.subPrice || product.price) : product.price,
+        priceSnapshot: isSubscription ? variant.subPrice : variant.price,
         isSubscription,
         frequency: isSubscription ? frequency : undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        product: {
-          id: product.id,
-          name: product.name,
-          sku: product.sku || '',
-          price: product.price,
-          subPrice: product.subPrice,
-          images: product.images || []
+        variant: {
+          id: variant.id,
+          sku: variant.sku,
+          packSize: variant.packSize,
+          price: variant.price,
+          subPrice: variant.subPrice,
+          product: {
+            id: productInfo?.id || variant.productId,
+            name: productInfo?.name || "Product",
+            images: productInfo?.images || []
+          }
         }
       });
     }

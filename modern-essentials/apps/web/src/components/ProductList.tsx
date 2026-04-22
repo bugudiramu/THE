@@ -21,9 +21,9 @@ interface ProductListProps {
 export function ProductList({ products }: ProductListProps) {
   const { addItem, items, updateItem, removeItem } = useCart();
 
-  const getInCartQuantity = (productId: string) => {
+  const getInCartQuantity = (variantId: string) => {
     return items
-      .filter((i) => i.productId === productId)
+      .filter((i) => i.variantId === variantId)
       .reduce((sum, i) => sum + i.quantity, 0);
   };
 
@@ -43,7 +43,12 @@ export function ProductList({ products }: ProductListProps) {
         const mainImage =
           product.images?.[0]?.url ||
           "https://images.unsplash.com/photo-1559229873-383d75ba200f?q=80&w=2012&auto=format&fit=crop";
-        const inCartQty = getInCartQuantity(product.id);
+        
+        // Use first variant for default display
+        const defaultVariant = product.variants?.[0];
+        if (!defaultVariant) return null;
+
+        const inCartQty = getInCartQuantity(defaultVariant.id);
 
         return (
           <Card
@@ -91,11 +96,11 @@ export function ProductList({ products }: ProductListProps) {
               <div className="mt-auto pt-4 flex items-center justify-between border-t border-primary/5">
                 <div className="flex flex-col">
                   <Text variant="large" className="text-primary font-bold text-lg">
-                    ₹{(product.price / 100).toFixed(2)}
+                    ₹{(defaultVariant.price / 100).toFixed(2)}
                   </Text>
-                  {product.subPrice && (
+                  {defaultVariant.subPrice && (
                     <Text variant="xs" className="text-secondary font-black text-[9px] uppercase tracking-tight mt-0.5">
-                      Save ₹{((product.price - product.subPrice) / 100).toFixed(2)} with sub
+                      Save ₹{((defaultVariant.price - defaultVariant.subPrice) / 100).toFixed(2)} with sub
                     </Text>
                   )}
                 </div>
@@ -107,7 +112,7 @@ export function ProductList({ products }: ProductListProps) {
                       size="icon"
                       onClick={() => {
                         const item = items.find(
-                          (i) => i.productId === product.id,
+                          (i) => i.variantId === defaultVariant.id,
                         );
                         if (item) {
                           if (item.quantity > 1)
@@ -127,7 +132,7 @@ export function ProductList({ products }: ProductListProps) {
                       size="icon"
                       onClick={() => {
                         const item = items.find(
-                          (i) => i.productId === product.id,
+                          (i) => i.variantId === defaultVariant.id,
                         );
                         if (item) updateItem(item.id, item.quantity + 1);
                       }}
@@ -138,7 +143,7 @@ export function ProductList({ products }: ProductListProps) {
                   </div>
                 ) : (
                   <Button
-                    onClick={() => addItem(product, 1)}
+                    onClick={() => addItem(defaultVariant, 1, false, "WEEKLY", product)}
                     className="bg-secondary hover:brightness-110 text-white font-black py-2.5 px-5 rounded-full transition-all active:scale-95 flex items-center gap-2 text-[10px] uppercase tracking-widest h-auto shadow-md shadow-secondary/10"
                   >
                     Add to Cart

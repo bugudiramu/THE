@@ -12,7 +12,7 @@ import { QCStatus, WastageReason } from "@modern-essentials/types";
 export class CreateGrnDto {
   @IsString()
   @IsNotEmpty()
-  productId!: string;
+  variantId!: string;
 
   @IsInt()
   @Min(1)

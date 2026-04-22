@@ -21,7 +21,7 @@ export const VALID_TRANSITIONS: Record<SubscriptionStatus, SubscriptionStatus[]>
 
 export interface ISubscriptionPlan {
   id: string;
-  productId: string;
+  variantId: string;
   frequency: SubscriptionFrequency;
   amount: number;
   razorpayPlanId: string;
@@ -31,7 +31,7 @@ export interface ISubscriptionPlan {
 export interface ISubscription {
   id: string;
   userId: string;
-  productId: string;
+  variantId: string;
   planId?: string;
   razorpaySubscriptionId?: string;
   quantity: number;
@@ -60,7 +60,7 @@ export interface ISubscriptionLog {
 }
 
 export interface CreateSubscriptionPayload {
-  productId: string;
+  variantId: string;
   quantity: number;
   frequency: SubscriptionFrequency;
   addressLine1?: string;
