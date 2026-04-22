@@ -231,6 +231,51 @@ export class CheckoutService {
       }
 
       return await this.prisma.$transaction(async (tx) => {
+        // 1.8 Inventory Check & Locking (Pessimistic Lock §9.1)
+        // We must check and deduct inventory BEFORE creating the order to prevent overselling.
+        // Sort items by variantId to prevent deadlocks (Lock Ordering §9.2)
+        const itemsToProcess = [...orderData.items].sort((a, b) => 
+          a.variantId.localeCompare(b.variantId)
+        );
+        
+        for (const item of itemsToProcess) {
+          // Lock the batches for this variant to prevent concurrent updates
+          // Use FEFO: Order by expires_at ASC
+          const batches = await tx.$queryRaw<any[]>`
+            SELECT id, qty FROM inventory_batches 
+            WHERE variant_id = ${item.variantId} 
+            AND status = 'AVAILABLE' 
+            AND qc_status = 'PASSED'
+            AND qty > 0
+            ORDER BY expires_at ASC
+            FOR UPDATE
+          `;
+
+          const totalAvailable = batches.reduce((sum, b) => sum + b.qty, 0);
+          if (totalAvailable < item.quantity) {
+            throw new BadRequestException(
+              `Insufficient stock for item ${item.variantId}. Available: ${totalAvailable}, Requested: ${item.quantity}`
+            );
+          }
+
+          // Deduct from batches using FEFO logic
+          let remainingToDeduct = item.quantity;
+          for (const batch of batches) {
+            if (remainingToDeduct <= 0) break;
+
+            const deduction = Math.min(batch.qty, remainingToDeduct);
+            await tx.inventoryBatch.update({
+              where: { id: batch.id },
+              data: { 
+                qty: batch.qty - deduction,
+                // If qty becomes 0, we could optionally change status, 
+                // but 'AVAILABLE' with qty 0 is also handled by our queries.
+              }
+            });
+            remainingToDeduct -= deduction;
+          }
+        }
+
         // 2. Handle Subscription Items
         const subItems = orderData.items.filter(item => item.isSubscription);
         let subscriptionId: string | undefined;
