@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Button, Heading, Text, Card } from "@modern-essentials/ui";
 import { ShoppingBag } from "lucide-react";
 
+export const runtime = "edge";
+
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6">
