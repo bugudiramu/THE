@@ -1,17 +1,17 @@
 import { ProductDetailClient } from "@/components/ProductDetailClient";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  Text,
+} from "@modern-essentials/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { 
-export const runtime = "edge";
 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-  BreadcrumbSeparator,
-  Text
-} from "@modern-essentials/ui";
+export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
 
@@ -54,14 +54,21 @@ export default async function ProductDetailPage({
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link href="/products">
-                  <Text variant="xs" className="font-bold text-primary/40 hover:text-primary transition-colors">Products</Text>
+                  <Text
+                    variant="xs"
+                    className="font-bold text-primary/40 hover:text-primary transition-colors"
+                  >
+                    Products
+                  </Text>
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="text-primary/20" />
             <BreadcrumbItem>
               <BreadcrumbPage>
-                <Text variant="xs" className="font-bold text-primary">{product.name}</Text>
+                <Text variant="xs" className="font-bold text-primary">
+                  {product.name}
+                </Text>
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
