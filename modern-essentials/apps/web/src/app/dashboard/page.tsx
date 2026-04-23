@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ChevronRight, LayoutDashboard, Package, History } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 import { 
+export const runtime = "edge";
+
   Button, 
   Heading, 
   Text, 

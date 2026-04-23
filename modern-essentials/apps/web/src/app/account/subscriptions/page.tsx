@@ -6,6 +6,8 @@ import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard";
 import { Button, Heading, Text, Badge, Card, Skeleton } from "@modern-essentials/ui";
 import Link from "next/link";
 import { Package, CheckCircle2, Calendar, RefreshCw } from "lucide-react";
+export const runtime = "edge";
+
 
 export default function AccountSubscriptionsPage() {
   const { isSignedIn, isLoaded } = useUser();

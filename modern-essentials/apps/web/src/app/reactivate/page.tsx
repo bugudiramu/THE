@@ -16,6 +16,8 @@ import {
   Badge
 } from "@modern-essentials/ui";
 import { RefreshCcw, CheckCircle2 } from "lucide-react";
+export const runtime = "edge";
+
 
 interface Subscription {
   id: string;

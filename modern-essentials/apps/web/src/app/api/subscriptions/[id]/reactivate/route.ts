@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+export const runtime = "edge";
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 

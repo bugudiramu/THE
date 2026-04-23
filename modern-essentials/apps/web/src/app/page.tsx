@@ -4,6 +4,8 @@ import { Button, Heading, Text, Badge, AspectRatio, Card } from "@modern-essenti
 import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, Leaf } from "lucide-react";
+export const runtime = "edge";
+
 
 export default function Home(): JSX.Element {
   return (

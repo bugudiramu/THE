@@ -33,6 +33,8 @@ import { SkipDialog } from "@/components/subscriptions/SkipDialog";
 import { CancelFlow } from "@/components/subscriptions/CancelFlow";
 import { FrequencyPicker } from "@/components/subscriptions/FrequencyPicker";
 import { QuantityPicker } from "@/components/subscriptions/QuantityPicker";
+export const runtime = "edge";
+
 
 export default function SubscriptionDetailPage() {
   const { id } = useParams();

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Heading, Text, Card, Button } from "@modern-essentials/ui";
 import { ArrowRight } from "lucide-react";
+export const runtime = "edge";
+
 
 export const dynamic = "force-dynamic";
 

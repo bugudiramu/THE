@@ -2,6 +2,8 @@ import { ProductDetailClient } from "@/components/ProductDetailClient";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { 
+export const runtime = "edge";
+
   Breadcrumb, 
   BreadcrumbItem, 
   BreadcrumbLink, 
