@@ -1,9 +1,9 @@
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import { Request, Response, NextFunction } from "express";
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { rawBody: true });
@@ -43,19 +43,14 @@ async function bootstrap(): Promise<void> {
     if (allowedOrigins.includes(origin)) {
       res.header("Access-Control-Allow-Origin", origin);
     }
-
-    res.header(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-    );
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, Accept, X-Requested-With",
-    );
+    
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, X-Requested-With");
     res.header("Access-Control-Allow-Credentials", "true");
 
     if (req.method === "OPTIONS") {
-      return res.sendStatus(204);
+      res.sendStatus(204);
+      return;
     }
     next();
   });
