@@ -21,12 +21,24 @@ async function bootstrap(): Promise<void> {
   );
 
   // Enable CORS
+  const parseEnvOrigins = (env?: string): string[] => {
+    if (!env) return [];
+    return env.split(",").map((origin) => origin.trim());
+  };
+
+  const allowedOrigins = [
+    ...parseEnvOrigins(process.env.FRONTEND_URL),
+    ...parseEnvOrigins(process.env.ADMIN_URL),
+    "https://thehonestessentials.com",
+    "https://www.thehonestessentials.com",
+    "https://admin.thehonestessentials.com",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+  ].filter(Boolean);
+
   app.enableCors({
-    origin: [
-      process.env.FRONTEND_URL ?? "http://localhost:3000",
-      process.env.ADMIN_URL ?? "http://localhost:3001",
-      "http://localhost:3002", // Web storefront
-    ],
+    origin: allowedOrigins,
     credentials: true,
   });
 
