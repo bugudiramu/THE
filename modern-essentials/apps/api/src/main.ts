@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 
@@ -20,28 +21,43 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  // Enable CORS
   const parseEnvOrigins = (env?: string): string[] => {
     if (!env) return [];
     return env.split(",").map((origin) => origin.trim());
   };
 
-  const allowedOrigins = [
-    ...parseEnvOrigins(process.env.FRONTEND_URL),
-    ...parseEnvOrigins(process.env.ADMIN_URL),
-    "https://thehonestessentials.com",
-    "https://www.thehonestessentials.com",
-    "https://admin.thehonestessentials.com",
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-  ].filter(Boolean);
+  // Manual CORS Middleware to ensure headers are ALWAYS present
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin as string;
+    const allowedOrigins = [
+      ...parseEnvOrigins(process.env.FRONTEND_URL),
+      ...parseEnvOrigins(process.env.ADMIN_URL),
+      "https://thehonestessentials.com",
+      "https://www.thehonestessentials.com",
+      "https://admin.thehonestessentials.com",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
+    ].filter(Boolean);
 
-  app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
+    if (allowedOrigins.includes(origin)) {
+      res.header("Access-Control-Allow-Origin", origin);
+    }
+
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+    );
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, Accept, X-Requested-With",
+    );
+    res.header("Access-Control-Allow-Credentials", "true");
+
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(204);
+    }
+    next();
   });
 
   // Swagger documentation
